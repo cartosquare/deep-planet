@@ -6,6 +6,7 @@ gdal.UseExceptions()
 import os
 import shutil
 import multiprocessing 
+import config
 
 def proces_tif(tif):
     tif_file = os.path.join(tif_dir, tif)
@@ -60,12 +61,8 @@ def proces_tif(tif):
 
 
 if __name__ == '__main__': 
-    if len(sys.argv) < 3:
-    print('Usage: python raster_s5_copy_valid_tiles.py tif_tile_dir new_tif_tile_dir')
-    exit()
-
-    tif_dir = sys.argv[1]
-    new_tif_dir = sys.argv[2]
+    tif_dir = config.tif_tiles_dir
+    new_tif_dir = config.valid_tif_tiles_dir
     if not os.path.exists(new_tif_dir):
         os.mkdir(new_tif_dir)
 

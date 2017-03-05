@@ -5,14 +5,10 @@ from skimage import io
 import shutil
 import numpy
 import sys
+import config
 
-
-if len(sys.argv) < 3:
-    print('Usage: python label_s3_color_to_gray.py color_dir gray_dir')
-    exit()
-
-color_dir = sys.argv[1]
-gray_dir = sys.argv[2]
+color_dir = config.valid_overlay_tiles_dir
+gray_dir = config.labels_dir
 
 if not os.path.exists(gray_dir):
     print 'saving to ' + gray_dir
@@ -151,19 +147,3 @@ def main():
 main()
 
 print(label_flags)
-
-# tile_file = '/Volumes/DataCube/cool_files/sanxia/15_26018_13628_val.png'
-# new_tile_file = '/Volumes/DataCube/cool_files/sanxia/15_26018_13628_val_gray.png'
-
-# img = io.imread(tile_file)
-# gray_img = color_map(img)
-
-# print('saving...' + new_tile_file)
-# io.imsave(new_tile_file, gray_img)
-
-# img = io.imread(new_tile_file)
-
-# for x in range(0, 256):
-#     for y in range(0, 256):
-#         if img[x][y] > 11:
-#             print(img[x][y])

@@ -2,12 +2,17 @@ import os
 from skimage import color
 from skimage import io
 import shutil
+import numpy
 import multiprocessing 
+import config
+from progressbar import *
 
-cloud_dir = 'cloud_tiles'
-really_cloud_dir = 'really_cloud_tiles'
+
+cloud_dir = config.cloud_tiles_dir
+really_cloud_dir = config.valid_cloud_tiles_dir
+
 total_pixels = 256 * 256 / 2.0
-
+#total_pixels = 1
 
 def cloud_covered(img):
     sum = 0
@@ -21,9 +26,12 @@ def cloud_covered(img):
 def process_image(image):
     items = image.split('.')
     if len(items) == 2 and items[1] == 'png':
-        image_path = os.path.join(label_dir, image)
+        image_path = os.path.join(cloud_dir, image)
 
         img = io.imread(image_path)
+        if (type(img[0][0]) != numpy.uint8):
+            print('Bad things!')
+
         if cloud_covered(img):
             old_file = os.path.join(cloud_dir, image)
             new_file = os.path.join(really_cloud_dir, image)
@@ -38,5 +46,17 @@ if __name__ == '__main__':
 
     image_list = os.listdir(cloud_dir)
 
-    pool = multiprocessing.Pool(multiprocessing.cpu_count()) 
-    pool.map(process_image, image_list)
+    # progress bar
+    widgets = [Bar('>'), ' ', Percentage(), ' ', Timer(), ' ', ETA()]
+    pbar = ProgressBar(widgets=widgets, maxval=len(image_list)).start()
+
+    nthreads = multiprocessing.cpu_count() * 2
+    pool = multiprocessing.Pool(processes=nthreads)
+
+    for i, _ in enumerate(pool.imap_unordered(process_image, image_list), 1):
+        pbar.update(i)
+
+    pool.close()
+    pool.join()
+    pbar.finish()
+

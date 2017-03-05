@@ -3,16 +3,17 @@ from skimage import color
 from skimage import io
 import shutil
 import math
+import config
 
-train_dir = 'train'
-label_old_dir = 'labels_color'
-label_new_dir = 'labels_color_sub'
+train_dir = config.valid_tif_tiles_dir
+label_old_dir = config.overlay_tiles_dir
+label_new_dir = config.valid_overlay_tiles_dir
 
 if not os.path.exists(label_new_dir):
     print 'saving to ' + label_new_dir
     os.mkdir(label_new_dir)
 
-pow15 = math.pow(2, 15)
+pow15 = math.pow(2, config.tile_level)
 train_files = os.listdir(train_dir)
 print('#trains', len(train_files))
 
@@ -29,10 +30,10 @@ for train in train_files:
         
     z = items[0]
     x = items[1]
-    y = int(items[2])
+    y = items[2]
 
-    label_old_file_path = os.path.join(label_old_dir, '%s_%s_%d.png' % (z, x, y))
-    label_new_file_path = os.path.join(label_new_dir, '%s_%s_%d.png' % (z, x, y))
+    label_old_file_path = os.path.join(label_old_dir, '%s_%s_%s.png' % (z, x, y))
+    label_new_file_path = os.path.join(label_new_dir, '%s_%s_%s.png' % (z, x, y))
 
     if not os.path.exists(label_old_file_path):
         print 'not exists: ', label_old_file_path

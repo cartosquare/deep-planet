@@ -5,49 +5,30 @@
 ### s0. 下载影像到根目录下的tifs文件夹
 
 ### s1. 影像重投影到EPSG:3857坐标系
-可以使用下面的脚本进行重投影。注意，可能需要根据你的数据修改 s_src 和 srcnodata 这两个参数
-```bash
-#!/bin/bash
-
-for file in tifs/*.tif
-do 
-    echo processing_$file
-
-    # this is right
-    gdalwarp -s_srs EPSG:32649 -t_srs EPSG:3857 -r bilinear -srcnodata 0 -dstnodata 0 $file proj_$file
-done
+```
+python raster_s1_reproj.py
 ```
 
 ### s2. 建立金字塔
-```python
-$ python build_overview.py
+```
+$ python raster_s2_build_overview.py
 ```
 
 ### s3. 合并影像
 ```
-$ gdalbuildvrt merge.vrt proj_tifs/*.tif
+$ python raster_s3_build_vrt.py
 ```
+
 ### s4. 切割影像
-``` bash
-#!/bin/bash
-
-out='tif_tiles'
-src='merge.vrt'
-
-# world extent
-worldMinx=11779924.71 
-worldMiny=3315613.19
-worldMaxx=12429394.15
-worldMaxy=3728152.58
-
-python dem2tiles.py ${src} ${out} 15 $worldMinx $worldMiny $worldMaxx $worldMaxy
+``` 
+python raster_s4_tiler.py
 ```
-注意修改影像范围和切割级别。
+注意在config文件中修改影像范围和切割级别。
 
 ### s5. 拷贝有效的影像
 拷贝没有nodata的影像作为训练样本
 ```
-$ python raster_s5_copy_valid_tiles.py tif_tiles train
+$ python raster_s5_copy_valid_tiles.py
 ```
 
 ## 二、标注样本准备
@@ -74,7 +55,7 @@ $ python label_s2_copy_labels.py
 
 ### s3. 标注样本转为灰度图
 ```
-$ python label_s3_color_to_gray.py labels_color_sub labels
+$ python label_s3_color_to_gray.py
 ```
 
 ## 三、云处理（可选）
