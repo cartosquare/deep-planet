@@ -62,7 +62,7 @@ namespace caffe {
         
         // Read an GeoTiff, and use it to initialize the top blobs.
         GDALDataset* dataset = (GDALDataset*)GDALOpen((root_folder + lines_[lines_id_].first).c_str(), GA_ReadOnly);
-        CHECK(dataset == 0) << "Open file " << lines_[lines_id_].first << " fail";
+        CHECK(dataset) << "Open file " << lines_[lines_id_].first << " fail";
         const int channels = dataset->GetRasterCount();
         const int width = dataset->GetRasterXSize();
         const int height = dataset->GetRasterYSize();
@@ -116,7 +116,7 @@ namespace caffe {
         // Reshape on single input batches for inputs of varying dimension.
         if (batch_size == 1) {
             GDALDataset* dataset = (GDALDataset*)GDALOpen((root_folder + lines_[lines_id_].first).c_str(), GA_ReadOnly);
-            CHECK(dataset == 0) << "Open file " << lines_[lines_id_].first << " fail";
+            CHECK(dataset) << "Open file " << lines_[lines_id_].first << " fail";
             
             const int channels = dataset->GetRasterCount();
             const int width = dataset->GetRasterXSize();
@@ -143,7 +143,7 @@ namespace caffe {
             
             // open geotiff data
             GDALDataset* dataset = (GDALDataset*)GDALOpen((root_folder + lines_[lines_id_].first).c_str(), GA_ReadOnly);
-            CHECK(dataset == 0) << "Open file " << lines_[lines_id_].first << " fail";
+            CHECK(dataset) << "Open file " << lines_[lines_id_].first << " fail";
             
             // open label data
             cv::Mat cv_lab = ReadImageToCVMat(root_folder + lines_[lines_id_].second, 0, 0, false, true);
