@@ -1,0 +1,26 @@
+{
+    "name": "train",
+    "map": ".",
+    "fonts": ".",
+    "dest": "./labels_color",
+    "lod": "./lod.json",
+    "def": "./tile_color.json",
+    "save_cloud": 0,
+    "levels": [15],
+    "types": [0],
+    "store_backend": "file",
+    "boundary":
+    [
+        11779924.71,
+        3315613.19,
+        12429394.15,
+        3728152.58
+    ],
+
+    "overwrite": 1,
+    "max_threads": 1,
+
+    "retina": 1,
+    "render_label": 0,
+    "expand": 0
+}

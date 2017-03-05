@@ -1,0 +1,32 @@
+{
+    "data_sources": {
+        "data": {
+            "source": "cloud/",
+            "type": "shapefile"
+        }
+    },
+    "background_color": [
+        0,
+        0,
+        0
+    ],
+    "background_opacity": 1,
+    "layers": {
+        "0_0": {
+            "data_source": "data",
+            "data_name": "cloud_2012",
+            "encode": "utf-8",
+            "visible": "true",
+            "rules": [
+                {
+                    "res_min": 0,
+                    "res_max": 156544,
+                    "symbol_type": "fill",
+                    "fill_color": [
+                        255, 255, 255
+                    ]
+                }
+            ]
+        }
+    }
+}
