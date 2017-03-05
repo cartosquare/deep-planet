@@ -35,7 +35,7 @@ for i in range(0, total_files):
 
     items = tile_name.split('.')
     if len(items) != 2 or items[1] != 'tif':
-        print('not tif file: ' + tile)
+        print('not tif file: ' + tile_name)
         continue
 
     items = items[0].split('_')
@@ -48,7 +48,7 @@ for i in range(0, total_files):
     y = items[2]
 
     img_tile = '%s/%s_%s_%s.tif' % (train_dir, z, x, y)
-    label_tile = '%s/%s_%s_%d.png' % (label_dir, z, x, y)
+    label_tile = '%s/%s_%s_%s.png' % (label_dir, z, x, y)
 
     if not os.path.exists(label_tile):
         print('not exists ' + label_tile)
