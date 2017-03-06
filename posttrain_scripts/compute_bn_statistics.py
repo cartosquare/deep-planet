@@ -5,8 +5,6 @@ from skimage.io import ImageCollection
 from argparse import ArgumentParser
 
 
-
-
 caffe_root = '/SegNet/caffe-segnet/' 			# Change this to the absolute directoy to SegNet Caffe
 import sys
 sys.path.insert(0, caffe_root + 'python')
@@ -17,14 +15,16 @@ from google.protobuf import text_format
 
 
 def extract_dataset(net_message):
-    assert net_message.layer[0].type == "DenseImageData"
-    source = net_message.layer[0].dense_image_data_param.source
+    assert net_message.layer[0].type == "DenseTiffData"
+    source = net_message.layer[0].dense_tiff_data_param.source
     with open(source) as f:
         data = f.read().split()
-    ims = ImageCollection(data[::2])
-    labs = ImageCollection(data[1::2])
-    assert len(ims) == len(labs) > 0
-    return ims, labs
+
+    #ims = ImageCollection(data[::2])
+    #labs = ImageCollection(data[1::2])
+    #assert len(ims) == len(labs) > 0
+    #return ims, labs
+    return len(data[::2])
 
 
 def make_testable(train_model_path):
@@ -177,9 +177,10 @@ if __name__ == '__main__':
 
     # use testable net to calculate BN layer stats
     print "Calculate BN stats..."
-    train_ims, train_labs = extract_dataset(testable_msg)
-    train_size = len(train_ims)
-    minibatch_size = testable_msg.layer[0].dense_image_data_param.batch_size
+    #train_ims, train_labs = extract_dataset(testable_msg)
+    #train_size = len(train_ims)
+    train_size = extract_dataset(testable_msg)
+    minibatch_size = testable_msg.layer[0].dense_tiff_data_param.batch_size
     num_iterations = train_size // minibatch_size + train_size % minibatch_size
     in_h, in_w =(256, 256)
     test_net, test_msg = make_test_files(BN_calc_path, args.weights, num_iterations,
