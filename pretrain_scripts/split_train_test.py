@@ -5,17 +5,13 @@ import numpy
 import random
 import math
 import sys
+import config
 
+train_dir = config.valid_tif_tiles_dir
+label_dir = config.labels_dir
 
-if len(sys.argv) < 5:
-    print('Usage: python split_train_test.py train_dir label_dir train_file test_file')
-    exit()
-
-train_dir = sys.argv[1]
-label_dir = sys.argv[2]
-
-train_file = sys.argv[3]
-test_file = sys.argv[4]
+train_file = config.train_txt
+test_file = config.test_txt
 
 ftrain = open(train_file, 'w')
 ftest = open(test_file, 'w')

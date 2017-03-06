@@ -1,13 +1,28 @@
+# -*- coding: utf-8 -*-
+
 ##########################################
 #
 # configuration options
 #
 ##########################################
 
-data_root = 'training_set/sanxia_2014'
+data_name = 'sanxia_2012'
+data_root = 'training_set/%s' % data_name
+
+train_txt = 'train_%s.txt' % data_name
+test_txt = 'test_%s.txt' % data_name
+
+deploy = ['zhanjiang_july', 'zhanjiang_feb', 'zhanjiang_oct']
+deploy_dir = 'deploy'
+
+###########################################
+classes = 2
+ignore_class = None # ignore_class = 31
+weight_file = '%s/training_set/weights.txt' % deploy_dir
 
 ####################### raster configuration ##################
 # original images
+raw_tifs = '%s/raw_tifs' % data_root
 src_tifs = '%s/tifs' % data_root
 src_projection = 'EPSG:32649'
 src_nodata = '0'
@@ -24,7 +39,12 @@ tif_tiles_dir = '%s/tif_tiles' % data_root
 valid_tif_tiles_dir = '%s/valid_tif_tiles' % data_root
 tile_level = 15
 # extent: minx, miny, maxx, maxy
-tile_extent = [11779924.71, 3315613.19, 12429394.15, 3728152.58]
+
+# for sanxia
+# tile_extent = [11779924.71, 3315613.19, 12429394.15, 3728152.58]
+
+# for zhanjiang
+tile_extent = [12272311.892742, 2403831.52580, 12304619.6025, 2436356.63936]
 
 ####################### vector configuration ##################
 overlay_dir = '%s/overlay' % data_root
@@ -40,6 +60,7 @@ labels_dir = '%s/labels' % data_root
 cloud_dir = '%s/cloud' % data_root
 cloud_tiles_dir = '%s/cloud_tiles' % data_root
 valid_cloud_tiles_dir = '%s/valid_cloud_tiles' % data_root
+
 
 
 
