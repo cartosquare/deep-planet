@@ -12,7 +12,7 @@ for file in files:
     fetched_file_path = os.path.join(config.src_tifs, file)
 
     filename, file_extension = os.path.splitext(file)
-	if file_extension != '.tif':
+    if file_extension != '.tif':
 		print 'unsupport file extension', file_extension
 		continue
 

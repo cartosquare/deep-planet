@@ -10,7 +10,7 @@ for file in files:
     encoded_file_path = os.path.join(config.png_tile_dir, file)
 
     filename, file_extension = os.path.splitext(file)
-	if file_extension != '.tif':
+    if file_extension != '.tif':
 		print 'unsupport file extension', file_extension
 		continue
     
