@@ -8,8 +8,8 @@ if __name__=='__main__':
         src = config.merged_tifs
         out_format = 'GTiff'
     else:
-        src = config.merged_png_tifs
-        out_format = 'PNG'
+        print 'not support image type', config.image_type
+        exit()
 
     out = config.tif_tiles_dir
     if not os.path.exists(out):
