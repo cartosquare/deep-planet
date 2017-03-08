@@ -2,7 +2,12 @@ import os
 import os.path
 import config
 
-for parent, dirnames, filenames in os.walk(config.tifs_3857):
+if config.image_type == 'tif':
+	working_dir = config.tifs_3857
+else:
+	working_dir = config.png_tile_dir
+
+for parent, dirnames, filenames in os.walk(working_dir):
 	for file in filenames:
 		print "process file: " + os.path.join(parent, file)
 		
@@ -11,7 +16,7 @@ for parent, dirnames, filenames in os.walk(config.tifs_3857):
 			print 'unsupport file extension', file_extension
 			continue
 
-		command = "gdaladdo -r gauss %s 2 4 8 16" % (os.path.join(parent, file))
+		command = "gdaladdo --config COMPRESS_OVERVIEW JPEG --config PHOTOMETRIC_OVERVIEW YCBCR --config INTERLEAVE_OVERVIEW PIXEL -r gauss -ro %s 2 4 8 16" % (os.path.join(parent, file))
 		print command
 		os.system(command)
 		

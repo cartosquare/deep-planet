@@ -4,7 +4,13 @@ import math
 import config
 
 if __name__=='__main__': 
-    src = config.merged_tifs
+    if config.image_type == 'tif':
+        src = config.merged_tifs
+        out_format = 'GTiff'
+    else:
+        src = config.merged_png_tifs
+        out_format = 'PNG'
+
     out = config.tif_tiles_dir
     if not os.path.exists(out):
         os.mkdir(out)
@@ -63,7 +69,7 @@ if __name__=='__main__':
             tileMaxy = worldOriginaly - j * tileExtent
             tileMiny = tileMaxy - tileExtent
         
-            command = "gdalwarp -te %s %s %s %s -ts 256 256 -r near -multi -q %s %s" % (format(tileMinx, '.10f'), format(tileMiny, '.10f'), format(tileMaxx, '.10f'), format(tileMaxy, '.10f'), src, tilepath)
+            command = "gdalwarp -of %s -te %s %s %s %s -ts 256 256 -r near -multi -q %s %s" % (out_format, format(tileMinx, '.10f'), format(tileMiny, '.10f'), format(tileMaxx, '.10f'), format(tileMaxy, '.10f'), src, tilepath)
             
             #print command
             os.system(command)
