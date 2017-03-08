@@ -1,15 +1,29 @@
 # deep-planet
+影像分割涉及到的样本准备、训练、精度评价工具。特点
+* 支持多波段数据训练
+* 支持将影像转换为图片训练（消除不同传感器DN值范围不同影响）
 
 
 ## 一、影像样本准备
-### s0. 下载影像到根目录下的tifs文件夹
+下载影像到 raw_tifs 下
+### s0. 提取需要的波段
+需要在config.py中指定需要提取哪些波段。如果要使用所有波段，可以直接跳过这一步，直接把影像拷贝到tifs目录下即可。
+```
+python raster_s0_fetch_band.py
+```
 
-### s1. 影像重投影到EPSG:3857坐标系
+### s1. 影像重投影到EPSG:3857坐标系。
+需要在config.py中指定源数据的坐标系和源数据的nodata值。
 ```
 python raster_s1_reproj.py
 ```
 
-### s2. 建立金字塔
+### s2. 图片编码转换成 jpeg encoding(optional, if use tif image type)
+```
+python raster_s1_reproj.py
+```
+
+### s2. 建立金字塔(optional，better than not)
 ```
 $ python raster_s2_build_overview.py
 ```
