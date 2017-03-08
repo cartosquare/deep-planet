@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 import os
 import numpy as np
-from skimage.io import ImageCollection
-from argparse import ArgumentParser
+import config
 
 
-caffe_root = '/SegNet/caffe-segnet/' 			# Change this to the absolute directoy to SegNet Caffe
+caffe_root = './caffe-segnet/' 			# Change this to the absolute directoy to SegNet Caffe
 import sys
 sys.path.insert(0, caffe_root + 'python')
 
@@ -151,26 +150,21 @@ def make_test_files(testable_net_path, train_weights_path, num_iterations,
     return net, test_msg
 
 
-def make_parser():
-    p = ArgumentParser()
-    p.add_argument('train_model')
-    p.add_argument('weights')
-    p.add_argument('out_dir')
-    return p
-
-
 if __name__ == '__main__':
     caffe.set_mode_gpu()
-    p = make_parser()
-    args = p.parse_args()
+    
+    out_dir = config.model_directory
+    train_model = config.train_model
+    weights = config.trained_weights
 
     # build and save testable net
-    if not os.path.exists(args.out_dir):
-        os.makedirs(args.out_dir)
+    if not os.path.exists(out_dir):
+        os.makedirs(out_dir)
+
     print "Building BN calc net..."
-    testable_msg = make_testable(args.train_model)
+    testable_msg = make_testable(train_model)
     BN_calc_path = os.path.join(
-        args.out_dir, '__for_calculating_BN_stats_' + os.path.basename(args.train_model)
+        out_dir, '__for_calculating_BN_stats_' + os.path.basename(train_model)
     )
     with open(BN_calc_path, 'w') as f:
         f.write(text_format.MessageToString(testable_msg))
@@ -183,16 +177,16 @@ if __name__ == '__main__':
     minibatch_size = testable_msg.layer[0].dense_tiff_data_param.batch_size
     num_iterations = train_size // minibatch_size + train_size % minibatch_size
     in_h, in_w =(256, 256)
-    test_net, test_msg = make_test_files(BN_calc_path, args.weights, num_iterations,
+    test_net, test_msg = make_test_files(BN_calc_path, weights, num_iterations,
                                          in_h, in_w)
     
     # save deploy prototxt
-    #print "Saving deployment prototext file..."
-    #test_path = os.path.join(args.out_dir, "deploy.prototxt")
-    #with open(test_path, 'w') as f:
-    #    f.write(text_format.MessageToString(test_msg))
+    print "Saving deployment prototext file..."
+    test_path = os.path.join(out_dir, "deploy.prototxt")
+    with open(test_path, 'w') as f:
+        f.write(text_format.MessageToString(test_msg))
     
     print "Saving test net weights..."
-    test_net.save(os.path.join(args.out_dir, "test_weights.caffemodel"))
+    test_net.save(os.path.join(out_dir, "test_weights.caffemodel"))
     print "done"
 
