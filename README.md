@@ -15,12 +15,12 @@ python raster_s0_fetch_band.py
 ### s1. 影像重投影到EPSG:3857坐标系。
 需要在config.py中指定源数据的坐标系和源数据的nodata值。
 ```
-python raster_s1_reproj.py
+$ python raster_s1_reproj.py
 ```
 
 ### s2. 图片编码转换成 jpeg encoding(optional, if use tif image type)
 ```
-python raster_s1_reproj.py
+$ python raster_s1_reproj.py
 ```
 
 ### s2. 建立金字塔(optional，better than not)
@@ -34,9 +34,16 @@ $ python raster_s3_build_vrt.py
 ```
 
 ### s4. 切割影像
+image type 为 tiff 时：
 ``` 
 python raster_s4_tiler.py
 ```
+
+image type 为 png 时：
+```
+$ python raster_s6_tile_png.py
+```
+
 注意在config文件中修改影像范围和切割级别。
 
 ### s5. 拷贝有效的影像
@@ -119,3 +126,10 @@ $ python posttrain_scripts/compute_bn_statistics.py models/segnet_train.prototxt
 ```
 compute_test_results
 ```
+
+## 成果
+## 道路分割
+Global acc = 0.98796 Class average acc = 0.72592 Mean Int over Union = 0.64794
+
+## 生态分割
+Global acc = 0.68479 Class average acc = 0.69358 Mean Int over Union = 0.44979
