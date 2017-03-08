@@ -16,7 +16,7 @@ for parent, dirnames, filenames in os.walk(working_dir):
 			print 'unsupport file extension', file_extension
 			continue
 
-		command = "gdaladdo --config COMPRESS_OVERVIEW JPEG --config PHOTOMETRIC_OVERVIEW YCBCR --config INTERLEAVE_OVERVIEW PIXEL -r gauss -ro %s 2 4 8 16" % (os.path.join(parent, file))
+		command = "gdaladdo -r gauss -ro %s 2 4 8 16" % (os.path.join(parent, file))
 		print command
 		os.system(command)
 		
