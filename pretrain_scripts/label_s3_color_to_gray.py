@@ -14,73 +14,10 @@ if not os.path.exists(gray_dir):
     print 'saving to ' + gray_dir
     os.mkdir(gray_dir)
 
-classes = [{
-    'name': '常绿阔叶林', 'color': [146, 211, 48], 'label': 0
-}, {
-    'name': '常绿针叶林', 'color': [143, 144, 239], 'label': 1
-}, {
-    'name': '混交林', 'color': [225, 137, 77], 'label': 2
-}, {
-    'name': '落叶阔叶林', 'color': [26, 223, 220], 'label': 3
-}, {
-    'name': '落叶针叶林', 'color': [221, 122, 183], 'label': 4
-}, {
-    'name': '常绿灌木林', 'color': [233, 111, 111], 'label': 5
-}, {
-    'name': '落叶灌木林', 'color': [208, 24, 61], 'label': 6
-}, {
-    'name': '草地', 'color': [114, 202, 132], 'label': 7
-}, {
-    'name': '城市草本绿地', 'color': [224, 203, 118], 'label': 8
-}, {
-    'name': '旱地', 'color': [138, 94, 208], 'label': 9
-}, {
-    'name': '水田', 'color': [117, 168, 240], 'label': 10
-}, {
-    'name': '灌木种植园', 'color': [222, 57, 16], 'label': 11
-}, {
-    'name': '苗圃', 'color': [152, 80, 204], 'label': 12
-}, {
-    'name': '乔木种植园', 'color': [216, 173, 108], 'label': 13
-}, {
-    'name': '采矿场地', 'color': [84, 231, 48], 'label': 14
-}, {
-    'name': '城市居民地', 'color': [195, 226, 70], 'label': 15
-}, {
-    'name': '城市乔灌混合绿地', 'color': [148, 221, 99], 'label': 16
-}, {
-    'name': '城市乔木绿地', 'color': [210, 210, 105], 'label': 17
-}, {
-    'name': '独立工业和商业用地', 'color': [193, 33, 237], 'label': 18
-}, {
-    'name': '基础设施', 'color': [205, 78, 207], 'label': 19
-}, {
-    'name': '垃圾填埋场', 'color': [37, 75, 215], 'label': 20
-}, {
-    'name': '镇村居民地', 'color': [20, 223, 139], 'label': 21
-}, {
-    'name': '河流季节性水面', 'color': [217, 114, 198], 'label': 22
-}, {
-    'name': '湖泊', 'color': [145, 124, 99], 'label': 23
-}, {
-    'name': '坑塘', 'color': [71, 36, 225], 'label': 24
-}, {
-    'name': '水库', 'color': [15, 231, 185], 'label': 25
-}, {
-    'name': '水库季节性水面', 'color': [210, 23, 101], 'label': 26
-}, {
-    'name': '水生植被', 'color': [31, 148, 221], 'label': 27
-}, {
-    'name': '永久河流水面', 'color': [92, 220, 92], 'label': 28
-}, {
-    'name': '坚硬表面', 'color': [66, 240, 133], 'label': 29
-}, {
-    'name': '松散表面', 'color': [114, 209, 230], 'label': 30
-}
-]
+classes = config.label_colours
 
 label_flags = []
-for i in range(0, 31):
+for i in range(0, config.classes):
     label_flags.append(0)
 
 def color_map(img):
@@ -102,10 +39,11 @@ def color_map(img):
                     break
 
             if not find_label:
-                #print('not find label, ', gray_img[x][y])
-                #print(img[x][y])
-
-                gray_img[x][y] = 31
+                if config.ignore_class is not None:
+                    gray_img[x][y] = config.ignore_class
+                else:
+                    print('error not find label, ', gray_img[x][y])
+                    print(img[x][y])
                 #cnt = cnt + 1
     
     #print(cnt / float(256 * 256))
