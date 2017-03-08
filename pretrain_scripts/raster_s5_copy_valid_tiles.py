@@ -8,7 +8,19 @@ import shutil
 import multiprocessing 
 import config
 from progressbar import *
+from skimage import io
 
+def proces_img(img_file):
+    items = img_file.split('.')
+    if len(items) == 2 and items[1] == 'png':
+        image_path = os.path.join(tif_dir, img_file)
+        new_img_file = os.path.join(new_tif_dir, img_file)
+        img = io.imread(image_path)
+        for x in range(0, 256):
+            for y in range(0, 256):
+                if img[x][y][0] == 0 and img[x][y][1] == 0 and img[x][y][2] == 0 and img[x][y][3] == 0:
+                    return 
+        shutil.copyfile(image_path, new_img_file)
 
 def proces_tif(tif):
     tif_file = os.path.join(tif_dir, tif)
@@ -83,8 +95,12 @@ if __name__ == '__main__':
     nthreads = multiprocessing.cpu_count() * 2
     pool = multiprocessing.Pool(processes=nthreads)
 
-    for i, _ in enumerate(pool.imap_unordered(proces_tif, tifs), 1):
-        pbar.update(i)
+    if config.image_type == 'tif':
+        for i, _ in enumerate(pool.imap_unordered(proces_tif, tifs), 1):
+            pbar.update(i)
+    else:
+        for i, _ in enumerate(pool.imap_unordered(proces_img, tifs), 1):
+            pbar.update(i)
 
     pool.close()
     pool.join()
