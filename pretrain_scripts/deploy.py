@@ -36,13 +36,13 @@ for ele in config.deploy:
     shutil.copytree(label_dir, new_label_dir)
 
     # train file
-    train_file = 'train_%s.txt' % (ele)
+    train_file = 'training_set/%s/train.txt' % (ele)
     with open(train_file, 'r') as f:
         for line in f:
             ftrain.write(line)
     
     # test file
-    test_file = 'test_%s.txt' % (ele)
+    test_file = 'training_set/%s/test.txt' % (ele)
     with open(test_file, 'r') as f:
         for line in f:
             ftest.write(line)

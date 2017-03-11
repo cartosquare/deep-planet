@@ -25,9 +25,10 @@ selected_bands = [5, 3, 2]
 vis_bands = [5, 3, 2]
 
 # 需要分割的类别数
-classes = 2
+classes = 31
 #以及需要忽略的类别（一般是背景）
-ignore_class = None # ignore_class = 31
+#ignore_class = None # 
+ignore_class = 31
 
 # 数据目录。即处理训练样本的目录所在。执行一个分割任务时，一般在training_set目录下新建一个目录。
 data_name = 'sanxia_2012'
@@ -40,7 +41,7 @@ tile_extent = [11779924.71, 3315613.19, 12429394.15, 3728152.58]
 #tile_extent = [12272311.892742, 2403831.52580, 12304619.6025, 2436356.63936]
 
 # 需要发布的训练集（名称和数据目录一样，可以指定多个数据目录进行合并）
-deploy = ['zhanjiang_july', 'zhanjiang_feb', 'zhanjiang_oct']
+deploy = ['sanxia_2012']
 
 # 训练和测试网络的
 trained_weights = '%s/models/Training/envnet_iter_10000.caffemodel' % data_root
@@ -169,7 +170,7 @@ train_txt = '%s/train.txt' % (data_root)
 test_txt = '%s/test.txt' % (data_root)
 
 # 发布训练样本的目录
-deploy_dir = 'deploy'
+deploy_dir = 'deploy-sanxia'
 
 #********************************  测试时需要的参数 ***************************
 # 模型所在目录
