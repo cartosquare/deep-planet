@@ -1,13 +1,6 @@
 name: "VGG_ILSVRC_16_layer"
 layer {
   name: "data"
-  type: "DenseTiffData"
-  top: "data"
-  top: "label"
-  dense_tiff_data_param {
-    source: "test.txt"	# Change this to the absolute path to your data file
-    batch_size: 1
-  }
 }
 layer {
   bottom: "data"
@@ -1524,26 +1517,6 @@ layer {
   bottom: "conv1_2_D"
   top: "conv1_1_D"
   name: "conv1_1_D"
-  type: "Convolution"
-  param {
-    lr_mult: 1
-    decay_mult: 1
-  }
-  param {
-    lr_mult: 2
-    decay_mult: 0
-  }
-  convolution_param {
-    weight_filler {
-      type: "msra"
-    }
-    bias_filler {
-      type: "constant"
-    }
-    num_output: 31
-    pad: 1
-    kernel_size: 3
-  }
 }
 layer {
   name: "prob"

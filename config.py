@@ -119,6 +119,22 @@ class DeepPlanetConfig:
 		else:
 			self.deploy = [self.data_name]
 
+		# 训练参数
+		if 'gpu' in pobject:
+			self.gpu = pobject['gpu']
+		else:
+			self.gpu = 0
+
+		if 'use_gpu' in pobject:
+			self.use_gpu = pobject['use_gpu']
+		else:
+			self.use_gpu = False
+		
+		if 'snapshot' in pobject:
+			self.snapshot = pobject['snapshot']
+		else:
+			self.snapshot = 100000
+
 		# 测试样本数
 		if 'test_iter' in pobject:
 			self.test_iter = pobject['test_iter']
@@ -135,14 +151,36 @@ class DeepPlanetConfig:
 
 
 		# 发布训练样本的目录
-		self.deploy_dir = 'deploy-sanxia'
+		self.deploy_dir = ''
+		for i in range(len(self.deploy)):
+			if i == (len(self.deploy) - 1):
+				self.deploy_dir = self.deploy_dir + self.deploy[i]
+			else:
+				self.deploy_dir = self.deploy_dir + self.deploy[i] + '_'
 
 		self.data_root = 'training_set/%s' % self.data_name
 
-
 		# 训练和测试网络的
-		self.trained_weights = '%s/models/Training/envnet_iter_10000.caffemodel' % self.data_root
-		self.test_weights = '%s/models/inference/test_weights.caffemodel' % self.data_root
+		self.model_dir = 'models'
+		self.snapshot_dir = '%s/training' % self.model_dir
+		self.snapshot_prefix = '%s/dp' % self.snapshot_dir
+		self.test_dir = '%s/inference' % self.model_dir
+
+		self.solver = '%s/segnet_solver.prototxt' % self.model_dir
+		self.train_net = '%s/segnet_train.prototxt' % self.model_dir
+		self.train_net_template = 'models/segnet_train.prototxt'
+		self.trained_weights = '%s_iter_%d.caffemodel' % (self.snapshot_prefix, self.snapshot)
+		self.test_weights = '%s/test_weights.caffemodel' % self.test_dir
+
+		# 模型所在目录
+		self.inference_dir = '%s/inference' % self.model_dir
+
+		# 测试模型
+		self.inference_net = '%s/segnet_inference.prototxt' % self.model_dir
+		self.inference_net_template = 'models/segnet_inference.prototxt'
+
+		# 分类权重
+		self.weight_file = '%s/weights.txt' % self.deploy_dir
 
 		self.log_file = '%s/log.txt' % self.data_root
 
@@ -195,14 +233,8 @@ class DeepPlanetConfig:
 		self.predict_txt = '%s/predict.txt' % (self.data_root)
 
 		#********************************  测试时需要的参数 ***************************
-		# 模型所在目录
-		self.model_directory = '%s/models/inference' % self.data_root
-		# 训练模型
-		self.train_model = '%s/models/segnet_train.prototxt' % self.data_root
-		# 测试模型
-		self.test_model = '%s/models/segnet_inference.prototxt' % self.data_root
-		# 分类权重
-		self.weight_file = '%s/models/weights.txt' % self.data_root
+		
+		
 
 		# 测试数据的输出目录
 		self.test_img_dir = '%s/models/img' % self.data_root
