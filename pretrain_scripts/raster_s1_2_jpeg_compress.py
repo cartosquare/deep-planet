@@ -18,7 +18,7 @@ for file in files:
         command = 'gdal_translate -scale -ot Byte -co COMPRESS=JPEG -co JPEG_QUALITY=100 %s %s' % (file_path, encoded_file_path)
     else:
         band_str = ''
-        for band in config.selected_bands:
+        for band in config.vis_bands:
             band_str = band_str + (' -b %s' % band)
         command = 'gdal_translate -scale %s -ot Byte -co COMPRESS=JPEG -co JPEG_QUALITY=100 %s %s' % (band_str, file_path, encoded_file_path)
     print command

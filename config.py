@@ -124,7 +124,7 @@ class DeepPlanetConfig:
 			self.test_iter = pobject['test_iter']
 		else:
 			self.test_iter = 1
-		
+
 
 		# 类别标签
 		if 'label_colours' in pobject:
@@ -174,6 +174,9 @@ class DeepPlanetConfig:
 		#******************************* 标注样本准备涉及的参数 *************************
 		# 训练标注，shapefile格式，所在的目录
 		self.overlay_dir = '%s/overlay' % self.data_root
+		self.style_file = '%s/style.json' % self.data_root
+		self.lod_file = '%s/lod.json' % self.data_root
+		self.tiler_file = '%s/tiler_config.json' % self.data_root
 
 		# This configure should not be touch!!!
 		# because label_color directory is created by another program!!!

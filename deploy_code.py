@@ -3,6 +3,7 @@ import compileall
 import shutil
 import os
 
+# python -m py_compile file.py
 src_dir = 'pretrain_scripts'
 dist_dir = 'dist'
 
@@ -34,4 +35,5 @@ for file in files:
     print('dist: %s -> %s' % (oldfile, newfile))
     shutil.copy(oldfile, newfile)
 
-#shutil.copy('config.py', dist_dir)
+shutil.copy('config.py', dist_dir)
+shutil.copy('config.json', dist_dir)
