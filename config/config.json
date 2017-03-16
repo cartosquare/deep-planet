@@ -1,0 +1,33 @@
+{
+    "mode": "[str], train or predict",
+    "process_visualize": "[bool], generate visualize tiles or not",
+    "process_analyze": "[bool], generate analyze tiles or not",
+    "tile_level": "[str], resolution level, 0-19",
+    "visualize_level": "[str], visualize levels, for example: 10-15",
+    "image_type": "[str], could be tif or png",
+    "src_projection": "[str], projection of tifs, e.g. EPSG:3857",
+    "src_nodata": "[str], nodata value of tifs, e.g. 0",
+    "analyze_bands": "[array], bands for training, e.g. [1, 2, 3]. If not specified, will use all bands.",
+    "visualize_bands": "[array], bands for visualize, e.g. [1, 2, 3]. If not specified, will use all bands",
+    "data_name": "[str], training dataset name.",
+    "classes": "[int], class count of this segmentation task.",
+    "ignore_class": "[int], ignore a class, often background. Not required, if not specified, will care about all the classes.",
+    "tile_extent": "[array], training data extent, [minx, miny, maxx, maxy]",
+    "deploy": "[array], the element in array should be one or many data_name",
+    "snapshot": "[int], inteval of saving trining result.",
+    "use_snapshot": "[int], use which snapshot to generate test weight.",
+    "use_gpu": "[bool], use gpu or not",
+    "gpu": "[bool], use which gpu",
+    "label_colours": [
+        {
+            "name": "[str], name of class 1", 
+            "color": "[array], color of this class, e.g. [146, 211, 48, 255]", 
+            "label": "[int], label index, e.g. 0"
+        },
+        {
+            "name": "name of class 2", 
+            "color": [143, 144, 239, 255],
+            "label": 1
+        }
+    ]
+}

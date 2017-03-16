@@ -15,235 +15,7 @@ import multiprocessing
 from progressbar import *
 from skimage import io
 import json
-
-##########################################
-#
-# configuration class
-#
-##########################################
-
-class DeepPlanetConfig:
-	def Initialize(self, pobject):
-		#********************************   通用参数  **********************************
-		# could be train or predict
-		# when train, tiles with nodata value will be remove
-		# when predict, tiles with nodata will be keep remain
-		if 'mode' in pobject:
-			self.mode = pobject['mode']
-		else:
-			self.mode = 'train'
-		
-		if 'process_visualize' in pobject:
-			self.process_visualize =  pobject['process_visualize']
-		else:
-			self.process_visualize = False
-
-		if 'process_analyze' in pobject:
-			self.process_analyze =  pobject['process_analyze']
-		else:
-			self.process_analyze = True
-
-		# 训练样本大小，目前只支持 256px * 256px
-		self.dim_row = 256
-		self.dim_col = 256
-
-		# 训练样本分辨率（0-19）
-		if 'tile_level' in pobject:
-			self.tile_level = pobject['tile_level']
-		else:
-			self.tile_level = '15'
-
-		if 'visualize_level' in pobject:
-			self.visualize_level = pobject['visualize_level']
-		else:
-			self.visualize_level = '10-15'
-
-		# 训练样本类型。可以为 'tif' 或是 'png'
-		if 'image_type' in pobject:
-			self.image_type = pobject['image_type']
-		else:
-			self.image_type = 'tif'
-
-		# 影像投影和nodata值
-		#src_projection = 'EPSG:32649'
-		if 'src_projection' in pobject:
-			self.src_projection = pobject['src_projection']
-		else:
-			print('warning: no src projection set!')
-			return False
-
-		if 'src_nodata' in pobject:
-			self.src_nodata = pobject['src_nodata']
-		else:
-			print('warning: no src_nodata set! default to 0')
-			self.src_nodata = '0'
-
-		# 训练的波段
-		#rapideye false-color-compose bands: [5, 3, 2]
-		# FG false-color compose bands: [4, 3, 2]
-		# planetlabs [1, 2, 3]
-		if 'analyze_bands' in pobject:
-			self.analyze_bands = pobject['analyze_bands']
-		else:
-			print('warning: no analyze_bands set! default to [1 2 3]')
-			self.analyze_bands = [1, 2, 3]
-
-		# 可视化的波段
-		if 'visualize_bands' in pobject:
-			self.visualize_bands = pobject['visualize_bands']
-		else:
-			print('warning: no visualize_bands set! default to [1 2 3]')
-			self.visualize_bands = [1, 2, 3]
-
-		# 需要分割的类别数
-		if 'classes' in pobject:
-			self.classes = pobject['classes']
-		else:
-			print('warning: must specify classes')
-			return False
-
-		#以及需要忽略的类别（一般是背景）
-		#ignore_class = None # 
-		if 'ignore_class' in pobject:
-			self.ignore_class = pobject['ignore_class']
-		else:
-			print('warning: no ignore_class set! default to None')
-			self.ignore_class = None
-
-		# 数据目录。即处理训练样本的目录所在。执行一个分割任务时，一般在training_set目录下新建一个目录。
-		if 'data_name' in pobject:
-			self.data_name = pobject['data_name']
-		else:
-			print('data_name must specified!!!')
-			return False
-		
-		if 'tile_extent' in pobject:
-			# 训练样本范围
-			# for sanxia
-			#tile_extent = [11779924.71, 3315613.19, 12429394.15, 3728152.58]
-			# for zhanjiang
-			#tile_extent = [12272311.892742, 2403831.52580, 12304619.6025, 2436356.63936]
-			self.tile_extent = pobject['tile_extent']
-		else:
-			print('tile_extent must specified!')
-			return False
-
-		if 'deploy' in pobject:
-			# 需要发布的训练集（名称和数据目录一样，可以指定多个数据目录进行合并）
-			self.deploy = pobject['deploy']
-		else:
-			self.deploy = [self.data_name]
-
-		# 测试样本数
-		if 'test_iter' in pobject:
-			self.test_iter = pobject['test_iter']
-		else:
-			self.test_iter = 1
-
-
-		# 类别标签
-		if 'label_colours' in pobject:
-			self.label_colours = pobject['label_colours']
-		else:
-			print 'label_colours must specified!!!'
-			return False
-
-
-		# 发布训练样本的目录
-		self.deploy_dir = 'deploy'
-
-		self.data_root = 'training_set/%s' % self.data_name
-
-
-		# 训练和测试网络的
-		self.trained_weights = '%s/models/Training/envnet_iter_10000.caffemodel' % self.data_root
-		self.test_weights = '%s/models/inference/test_weights.caffemodel' % self.data_root
-
-		self.log_file = '%s/log.txt' % self.data_root
-
-		#********************************   影像样本准备时涉及的参数  **************************
-		# 原始影像所在的目录
-		self.src_tifs = '%s/tifs' % self.data_root
-
-		# 投影为 web 墨卡托的影像所在的目录
-		self.tifs_3857 = '%s/tifs_3857' % self.data_root
-
-		# 用于分析的影像目录
-		self.analyze_tifs_dir = '%s/analyze_tif' % self.data_root
-
-		# 用于可视化的影像目录
-		self.visualize_tifs_dir = '%s/visualize_tif' % self.data_root
-
-		# 将 tifs_3857 中的影像合并成的虚拟文件（为了下一步的切割）
-		self.merged_analyze_file = '%s/merged_analyze.tif' % self.data_root
-
-		# 将 png_tile_dir 中的影像合并成的虚拟文件（为了下一步的切割）
-		self.merged_visualize_file = '%s/merged_visualize.tif' % self.data_root
-
-		# 切割后的训练瓦片目录
-		self.analyze_tiles_dir = '%s/analyze_tiles' % self.data_root
-
-		# 切割后的训练瓦片目录
-		self.visualize_tiles_dir = '%s/visualize_tiles' % self.data_root
-
-		#******************************* 标注样本准备涉及的参数 *************************
-		# 训练标注，shapefile格式，所在的目录
-		self.overlay_dir = '%s/overlay' % self.data_root
-		self.style_file = '%s/style.json' % self.data_root
-		self.lod_file = '%s/lod.json' % self.data_root
-		self.tiler_file = '%s/tiler_config.json' % self.data_root
-
-		# This configure should not be touch!!!
-		# because label_color directory is created by another program!!!
-		# If you change this, change config.json too!!!
-		# 标注切割后所在的目录（rgb）
-		self.overlay_tiles_dir = '%s/labels_color' % self.data_root
-		# 过滤无效标注后的目录（rgb）
-		self.valid_overlay_tiles_dir = '%s/valid_labels_color' % self.data_root
-		# rgb标注转换为灰度标注的目录
-		self.labels_dir = '%s/labels' % self.data_root
-
-		#********************************* 训练样本输出的参数 ***********************
-		# 训练集合测试集文件分布
-		self.train_txt = '%s/train.txt' % (self.data_root)
-		self.test_txt = '%s/test.txt' % (self.data_root)
-		self.predict_txt = '%s/predict.txt' % (self.data_root)
-
-		#********************************  测试时需要的参数 ***************************
-		# 模型所在目录
-		self.model_directory = '%s/models/inference' % self.data_root
-		# 训练模型
-		self.train_model = '%s/models/segnet_train.prototxt' % self.data_root
-		# 测试模型
-		self.test_model = '%s/models/segnet_inference.prototxt' % self.data_root
-		# 分类权重
-		self.weight_file = '%s/weights.txt' % self.deploy_dir
-
-		# 测试数据的输出目录
-		self.test_img_dir = '%s/models/img' % self.data_root
-		self.test_gt_dir = '%s/models/gt' % self.data_root
-		self.test_pd_dir = '%s/models/pd' % self.data_root
-
-		#****************************** cloud configuration *********************
-		self.cloud_dir = '%s/cloud' % self.data_root
-		self.cloud_tiles_dir = '%s/cloud_tiles' % self.data_root
-		self.valid_cloud_tiles_dir = '%s/valid_cloud_tiles' % self.data_root
-
-		#***************************** test configuration ****************
-		self.predict_tif = '%s/predict_area.tif' % self.data_root
-
-
-		# predict tiles dir
-		self.predict_image_dir = '%s/pd' % self.data_root
-		self.predict_tiles_dir = '%s/predict_tiles' % self.data_root
-
-		self.predict_confidence_image_dir = '%s/pd_prob' % self.data_root
-		self.predict_confidence_dir = '%s/predict_prob' % self.data_root
-
-		self.predict_merged_image_dir = '%s/predict_merged_tiles' % self.data_root
-
-		return True
-
+from config import DeepPlanetConfig
 
 
 ################################## Functions ########################
@@ -267,7 +39,7 @@ def is_png(file):
 def tiff_count(src_dir):
     files = os.listdir(src_dir)
     count = 0
-    
+    tif_file = ''
     for file in files:
         file_path = os.path.join(src_dir, file)
         if is_tiff(file_path):
@@ -476,10 +248,12 @@ def proces_analyze_img(image_file):
 def proces_predict_img(image_file):
     if is_png(image_file):
         img = io.imread(image_file)
-        pixels = numpy.sum(img[0])
-        print pixels
-        if pixels == 0:
-            os.unlink(image_file)
+        for x in range(0, 256):
+            for y in range(0, 256):
+                if img[x][y][0] != 0 or img[x][y][1] != 0 or img[x][y][2] != 0:
+                    return 
+        os.unlink(image_file)
+
 
 def proces_tif(tif_file):
     if not is_tiff(tif_file):
@@ -590,7 +364,8 @@ def rm_invalid_tiles(src_dir, image_type, mode):
             for i, _ in enumerate(pool.imap_unordered(proces_analyze_img, files), 1):
                 pbar.update(i)
         else:
-            for i, _ in enumerate(pool.imap_unordered(proces_analyze_img, files), 1):
+            # mode == 'predict'
+            for i, _ in enumerate(pool.imap_unordered(proces_predict_img, files), 1):
                 pbar.update(i)
 
     pool.close()
@@ -897,7 +672,7 @@ def calculate_weights():
 
     images = []
     for ele in config.deploy:
-        img_dir = '%s/training_set/%s/%s' % (config.deploy_dir, ele, label_dir_name)
+        img_dir = 'training_set/%s/%s' % (ele, label_dir_name)
         imgs = os.listdir(img_dir)
 
         for i in range(len(imgs)):
@@ -975,7 +750,7 @@ def deploy():
     if not os.path.exists(config.deploy_dir):
         os.mkdir(config.deploy_dir) 
 
-    training_dir = '%s/training_set' % (config.deploy_dir)
+    training_dir = config.deploy_dir
     if not os.path.exists(training_dir):
         os.mkdir(training_dir) 
 
@@ -988,26 +763,26 @@ def deploy():
     for ele in config.deploy:
         print 'process data set ', ele
 
-        data_dir = '%s/training_set/%s' % (config.deploy_dir, ele)
-        if not os.path.exists(data_dir):
-            os.mkdir(data_dir)
+        # data_dir = '%s/training_set/%s' % (config.deploy_dir, ele)
+        # if not os.path.exists(data_dir):
+        #     os.mkdir(data_dir)
 
-        # train dir
-        items = config.analyze_tiles_dir.split('/')
-        analyze_tiles_dir_name = items[len(items) - 1]
+        # # train dir
+        # items = config.analyze_tiles_dir.split('/')
+        # analyze_tiles_dir_name = items[len(items) - 1]
 
-        train_dir = 'training_set/%s/%s' % (ele, analyze_tiles_dir_name)
-        new_train_dir = '%s/%s' % (data_dir, analyze_tiles_dir_name)
+        # train_dir = 'training_set/%s/%s' % (ele, analyze_tiles_dir_name)
+        # new_train_dir = '%s/%s' % (data_dir, analyze_tiles_dir_name)
 
-        shutil.copytree(train_dir, new_train_dir)
+        # shutil.copytree(train_dir, new_train_dir)
 
-        # label dir 
-        items = config.labels_dir.split('/')
-        label_dir_name = items[len(items) - 1]
-        label_dir = 'training_set/%s/%s' % (ele, label_dir_name)
-        new_label_dir = '%s/%s' % (data_dir, label_dir_name)
+        # # label dir 
+        # items = config.labels_dir.split('/')
+        # label_dir_name = items[len(items) - 1]
+        # label_dir = 'training_set/%s/%s' % (ele, label_dir_name)
+        # new_label_dir = '%s/%s' % (data_dir, label_dir_name)
 
-        shutil.copytree(label_dir, new_label_dir)
+        # shutil.copytree(label_dir, new_label_dir)
 
         # train file
         train_file = 'training_set/%s/train.txt' % (ele)
@@ -1039,6 +814,50 @@ def need_build_overview(dir_name):
     return True
 
 
+def generate_pages():
+    page_template = '''
+    <!DOCTYPE html>
+    <html>
+    <head>
+    <title>{title}</title>
+    <meta charset="utf-8" />
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.3/dist/leaflet.css" />
+	    <script src="https://unpkg.com/leaflet@1.0.3/dist/leaflet.js"></script>
+        <script src="js/jquery.min.js"></script>
+    </head>
+
+    <body style="margin: 0; padding:0; width: 100%; height: 100%; position: absolute; background-color: #9d9d9d">
+    <div id="map" style="width: 100%; height: 100%; position: absolute;"></div>
+    <script>
+        var center = L.Projection.SphericalMercator.unproject(L.point({x}, {y}))
+        var mymap = L.map('map').setView(center, {level});
+
+        L.tileLayer('{osm_url}').addTo(mymap);
+        L.tileLayer('{layer_url}').addTo(mymap);
+
+    </script>
+    </body>
+    </html>
+    '''
+    cx = (config.tile_extent[0] + config.tile_extent[2]) / 2.0
+    cy = (config.tile_extent[1] + config.tile_extent[3]) / 2.0
+    
+    if config.process_visualize:
+        visualize_str = page_template.format(title=config.data_name, x=cx, y=cy, 
+        level=config.tile_level, osm_url='http://a.tile.osm.org/{z}/{x}/{y}.png',
+        layer_url='/%s/{z}_{x}_{y}.png' % (config.visualize_tiles_dir)
+        )
+        with open(config.visualize_page, 'w') as f:
+            f.write(visualize_str)
+
+    if config.process_analyze and config.mode == 'train':
+        label_str = page_template.format(title=config.data_name, x=cx, y=cy, 
+        level=config.tile_level, osm_url='http://a.tile.osm.org/{z}/{x}/{y}.png',
+        layer_url='/%s/{z}_{x}_{y}.png' % (config.valid_overlay_tiles_dir)
+        )
+        with open(config.label_page, 'w') as f:
+            f.write(label_str)
+
 if __name__=='__main__': 
     # Parse command line options
     if len(sys.argv) < 2:
@@ -1054,6 +873,8 @@ if __name__=='__main__':
     # Step 0, Open log file
     flog = open(config.log_file, 'w')
     log(flog, 'tiler raster begins, this may take a while, go to drink a cup of coffee ...')
+
+    generate_pages()
 
     # Step 1, Reprojection if needed 
     if config.src_projection != 'EPSG:3857':
@@ -1117,9 +938,11 @@ if __name__=='__main__':
         else:
             log(flog, 'skip tiler tiles and remove invalid tiles progress ...')
     
-        if config.mode == 'predict':
-            create_overlap_predict_tiles(config.analyze_tiles_dir)
-            write_predict_txt(config.analyze_tiles_dir, config.predict_txt, config.image_type)
+        # should we use overlapping tec to predict???
+        #if config.mode == 'predict':
+        #    create_overlap_predict_tiles(config.analyze_tiles_dir)
+        #    write_predict_txt(config.analyze_tiles_dir, config.test_txt, config.image_type)
+        write_predict_txt(config.analyze_tiles_dir, config.test_txt, config.image_type)
     else:
         log(flog, 'skip analyze progress ...')
 
@@ -1159,6 +982,11 @@ if __name__=='__main__':
             log(flog, 'skip tiler visualize tiles progress ...')
 
     
+    if config.mode == 'predict':
+        shutil.copy(config.test_txt, '%s/predict.txt' % config.deploy_dir)
+        log(flog, 'finished!')
+        exit()
+
     ######### vector labels ###########
     if not os.path.exists(config.labels_dir):
         if not os.path.exists(config.overlay_tiles_dir):
@@ -1175,6 +1003,7 @@ if __name__=='__main__':
             log(flog, 'skip color2gray progress ...')
     else:
         log(flog, 'skip tiler vector tiles, copy labels and color2gray progress ...')
+
     ######## split train test ##########
     split_train_test()
 
@@ -1186,6 +1015,7 @@ if __name__=='__main__':
         calculate_weights()
     else:
         log(flog, 'skip deploy and calculating weights progress ...')
+
     log(flog, 'finished!')
 
 

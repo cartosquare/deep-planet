@@ -30,7 +30,7 @@ def gen_solver_file():
         f.write('momentum: 0.9\n')
         f.write('max_iter: 400000\n')
         f.write('weight_decay: 0.0005\n')
-        f.write('snapshot: 10000\n')
+        f.write('snapshot: %d\n' % (config.snapshot))
         f.write('snapshot_prefix: "%s"\n' % (os.path.join(config.deploy_dir, config.snapshot_prefix)))
         if config.use_gpu:
             f.write('solver_mode: GPU\n')

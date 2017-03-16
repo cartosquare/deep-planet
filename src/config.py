@@ -11,8 +11,8 @@ class DeepPlanetConfig:
 	def Initialize(self, pobject):
 		#********************************   通用参数  **********************************
 		# could be train or predict
-		# when train, tiles with nodata value will be remove
-		# when predict, tiles with nodata will be keep remain
+		# when train, tiles with nodata value will be removed
+		# when predict, tiles with nodata will be keeped
 		if 'mode' in pobject:
 			self.mode = pobject['mode']
 		else:
@@ -50,7 +50,6 @@ class DeepPlanetConfig:
 			self.image_type = 'tif'
 
 		# 影像投影和nodata值
-		#src_projection = 'EPSG:32649'
 		if 'src_projection' in pobject:
 			self.src_projection = pobject['src_projection']
 		else:
@@ -133,14 +132,18 @@ class DeepPlanetConfig:
 		if 'snapshot' in pobject:
 			self.snapshot = pobject['snapshot']
 		else:
-			self.snapshot = 100000
+			self.snapshot = 10000
 
+		if 'use_snapshot' in pobject:
+			self.use_snapshot = pobject['use_snapshot']
+		else:
+			self.use_snapshot = 100000
+			
 		# 测试样本数
 		if 'test_iter' in pobject:
 			self.test_iter = pobject['test_iter']
 		else:
-			self.test_iter = 1
-
+			self.test_iter = None
 
 		# 类别标签
 		if 'label_colours' in pobject:
@@ -158,31 +161,35 @@ class DeepPlanetConfig:
 			else:
 				self.deploy_dir = self.deploy_dir + self.deploy[i] + '_'
 
+		# 处理样本的根目录
 		self.data_root = 'training_set/%s' % self.data_name
+		# log文件
+		self.log_file = '%s/log.txt' % self.data_root
 
-		# 训练和测试网络的
+		###################### 和训练样本相关的变量 ###############################
+		# 训练网络
 		self.model_dir = 'models'
+		self.solver = '%s/segnet_solver.prototxt' % self.model_dir
+		self.train_net_template = 'models/segnet_train.prototxt'
+		self.train_net = '%s/segnet_train.prototxt' % self.model_dir
+
+		# 训练好的网络参数
 		self.snapshot_dir = '%s/training' % self.model_dir
 		self.snapshot_prefix = '%s/dp' % self.snapshot_dir
-		self.test_dir = '%s/inference' % self.model_dir
-
-		self.solver = '%s/segnet_solver.prototxt' % self.model_dir
-		self.train_net = '%s/segnet_train.prototxt' % self.model_dir
-		self.train_net_template = 'models/segnet_train.prototxt'
 		self.trained_weights = '%s_iter_%d.caffemodel' % (self.snapshot_prefix, self.snapshot)
+
+		# 测试网络
+		self.test_dir = '%s/inference' % self.model_dir
 		self.test_weights = '%s/test_weights.caffemodel' % self.test_dir
+		self.test_net = '%s/segnet_inference.prototxt' % self.model_dir
+		self.test_net_template = 'models/segnet_inference.prototxt'
 
-		# 模型所在目录
-		self.inference_dir = '%s/inference' % self.model_dir
-
-		# 测试模型
-		self.inference_net = '%s/segnet_inference.prototxt' % self.model_dir
-		self.inference_net_template = 'models/segnet_inference.prototxt'
+		# 测试数据的输出目录
+		self.test_gt_dir = '%s/gt' % self.deploy_dir
+		self.test_pd_dir = '%s/pd' % self.deploy_dir
 
 		# 分类权重
 		self.weight_file = '%s/weights.txt' % self.deploy_dir
-
-		self.log_file = '%s/log.txt' % self.data_root
 
 		#********************************   影像样本准备时涉及的参数  **************************
 		# 原始影像所在的目录
@@ -230,34 +237,15 @@ class DeepPlanetConfig:
 		# 训练集合测试集文件分布
 		self.train_txt = '%s/train.txt' % (self.data_root)
 		self.test_txt = '%s/test.txt' % (self.data_root)
-		self.predict_txt = '%s/predict.txt' % (self.data_root)
 
-		#********************************  测试时需要的参数 ***************************
+		# **************************** 可视化页面 ***************************
+		self.visualize_page = '%s/visualize.html' % (self.data_root)
+		self.label_page = '%s/label.html' % (self.data_root)
 		
-		
-
-		# 测试数据的输出目录
-		self.test_img_dir = '%s/models/img' % self.data_root
-		self.test_gt_dir = '%s/models/gt' % self.data_root
-		self.test_pd_dir = '%s/models/pd' % self.data_root
-
-		#****************************** cloud configuration *********************
+		#****************************** cloud configuration[not used] *********************
 		self.cloud_dir = '%s/cloud' % self.data_root
 		self.cloud_tiles_dir = '%s/cloud_tiles' % self.data_root
 		self.valid_cloud_tiles_dir = '%s/valid_cloud_tiles' % self.data_root
-
-		#***************************** test configuration ****************
-		self.predict_tif = '%s/predict_area.tif' % self.data_root
-
-
-		# predict tiles dir
-		self.predict_image_dir = '%s/pd' % self.data_root
-		self.predict_tiles_dir = '%s/predict_tiles' % self.data_root
-
-		self.predict_confidence_image_dir = '%s/pd_prob' % self.data_root
-		self.predict_confidence_dir = '%s/predict_prob' % self.data_root
-
-		self.predict_merged_image_dir = '%s/predict_merged_tiles' % self.data_root
 
 		return True
 
