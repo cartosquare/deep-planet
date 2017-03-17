@@ -56,8 +56,8 @@ if __name__ == '__main__':
             for line in f:
                 iter = iter + 1
 
-    gt_dir = config.test_gt_dir
-    pd_dir = config.test_pd_dir
+    gt_dir = config.predict_gt_dir
+    pd_dir = config.predict_pd_dir
     #pd_prob_dir = config.test_pd_dir + '_prob'
     #img_dir = config.test_img_dir
     label_colours = config.label_colours

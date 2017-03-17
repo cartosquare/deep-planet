@@ -187,6 +187,8 @@ class DeepPlanetConfig:
 		# 测试数据的输出目录
 		self.test_gt_dir = '%s/gt' % self.deploy_dir
 		self.test_pd_dir = '%s/pd' % self.deploy_dir
+		self.test_gt_dir = '%s/predict_gt' % self.deploy_dir
+		self.test_pd_dir = '%s/predict_pd' % self.deploy_dir
 
 		# 分类权重
 		self.weight_file = '%s/weights.txt' % self.deploy_dir
