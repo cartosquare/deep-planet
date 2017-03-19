@@ -43,10 +43,10 @@ if __name__ == '__main__':
 
     # Step 0, Open log file
     flog = open(config.log_file, 'w')
-    log(flog, 'training, this may take a long time ...')
+    log(flog, 'testing, this may take a long time ...')
 
     # Import arguments
-    model = str(os.path.join(config.deploy_dir, config.inference_net))
+    model = str(os.path.join(config.deploy_dir, config.test_net))
     weights = str(os.path.join(config.deploy_dir, config.test_weights))
     if config.test_iter:
         iter = config.test_iter
@@ -58,18 +58,15 @@ if __name__ == '__main__':
 
     gt_dir = config.test_gt_dir
     pd_dir = config.test_pd_dir
-    #pd_prob_dir = config.test_pd_dir + '_prob'
-    #img_dir = config.test_img_dir
     label_colours = config.label_colours
 
     print('Model: %s' % model)
     print('Weights: %s' % weights)
 
-    # if not os.path.exists(pd_prob_dir):
-    #     os.mkdir(pd_prob_dir)
-    
     if not os.path.exists(pd_dir):
         os.mkdir(pd_dir)
+    if not os.path.exists(gt_dir):
+        os.mkdir(gt_dir)
 
     if config.use_gpu:
         caffe.set_mode_gpu()
@@ -105,17 +102,11 @@ if __name__ == '__main__':
 		rgb = rgb.astype(int)
 		rgb_gt = rgb_gt.astype(int)
 
-		#image = image/255.0
-
-		#image = np.transpose(image, (1,2,0))
-		#output = np.transpose(output, (1,2,0))
-		#image = image[:,:,(2,1,0)]
-
-		#scipy.misc.toimage(image, cmin=0.0, cmax=1).save('image.png')
-		#scipy.misc.toimage(rgb_gt, cmin=0.0, cmax=1).save('%s/%d.png' % (gt_dir, i))
-		#scipy.misc.toimage(rgb, cmin=0.0, cmax=1).save('%s/%d.png' % (pd_dir, i))
 		io.imsave('%s/%d.png' % (gt_dir, i), rgb_gt)
 		io.imsave('%s/%d.png' % (pd_dir, i), rgb)
 
-	print 'Success!'
+
+    log(flog, 'success.')
+    
+    print 'Success!'
 

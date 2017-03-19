@@ -94,9 +94,13 @@ def gen_train_file():
                         ftrain.write('    %s' % (wl))
 
 
-def gen_infence_file():
-    log(flog, 'generating infence net file %s' % os.path.join(config.deploy_dir, config.inference_net))
-    ftrain = open(os.path.join(config.deploy_dir, config.inference_net), 'w')
+def gen_infence_file(mode):
+    if mode == 'test':
+        log(flog, 'generating test net file %s' % os.path.join(config.deploy_dir, config.test_net))
+        ftrain = open(os.path.join(config.deploy_dir, config.test_net), 'w')
+    else:
+        log(flog, 'generating predict net file %s' % os.path.join(config.deploy_dir, config.predict_net))
+        ftrain = open(os.path.join(config.deploy_dir, config.predict_net), 'w')
 
     with open(config.inference_net_template, 'r') as f:
         for line in f:
@@ -109,7 +113,7 @@ def gen_infence_file():
                     ftrain.write('  top: "data"\n')
                     ftrain.write('  top: "label"\n')
                     ftrain.write('  dense_tiff_data_param {\n')
-                    ftrain.write('    source: "%s/test.txt"\n' % config.deploy_dir)
+                    ftrain.write('    source: "%s/%s.txt"\n' % (config.deploy_dir, mode))
                     ftrain.write('    batch_size: 1\n')
                     ftrain.write('  }\n')
                 else:
@@ -117,7 +121,7 @@ def gen_infence_file():
                     ftrain.write('  top: "data"\n')
                     ftrain.write('  top: "label"\n')
                     ftrain.write('  dense_image_data_param {\n')
-                    ftrain.write('    source: "%s/test.txt"\n' % config.deploy_dir)
+                    ftrain.write('    source: "%s/%s.txt"\n' % config.deploy_dir, mode)
                     ftrain.write('    batch_size: 1\n')
                     ftrain.write('  }\n')
 
@@ -185,5 +189,6 @@ if __name__=='__main__':
 
     gen_solver_file()
     gen_train_file()
-    gen_infence_file()
+    gen_infence_file('test')
+    gen_infence_file('predict')
     train()

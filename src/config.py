@@ -31,6 +31,7 @@ class DeepPlanetConfig:
 		# 训练样本大小，目前只支持 256px * 256px
 		self.dim_row = 256
 		self.dim_col = 256
+		self.image_dim = 256
 
 		# 训练样本分辨率（0-19）
 		if 'tile_level' in pobject:
@@ -85,6 +86,11 @@ class DeepPlanetConfig:
 		else:
 			print('warning: must specify classes')
 			return False
+
+		if 'overlap' in pobject:
+			self.overlap = pobject['overlap']
+		else:
+			self.overlap = 128
 
 		#以及需要忽略的类别（一般是背景）
 		#ignore_class = None # 
@@ -181,15 +187,20 @@ class DeepPlanetConfig:
 		# 测试网络
 		self.test_dir = '%s/inference' % self.model_dir
 		self.test_weights = '%s/test_weights.caffemodel' % self.test_dir
-		self.test_net = '%s/segnet_inference.prototxt' % self.model_dir
-		self.test_net_template = 'models/segnet_inference.prototxt'
+		self.test_net = '%s/segnet_test.prototxt' % self.model_dir
+		self.predict_net = '%s/segnet_predict.prototxt' % self.model_dir
+		self.inference_net_template = 'models/segnet_inference.prototxt'
 
 		# 测试数据的输出目录
 		self.test_gt_dir = '%s/gt' % self.deploy_dir
 		self.test_pd_dir = '%s/pd' % self.deploy_dir
-		self.test_gt_dir = '%s/predict_gt' % self.deploy_dir
-		self.test_pd_dir = '%s/predict_pd' % self.deploy_dir
 
+		# 预测数据输出目录
+		self.predict_dir = '%s/predict_pd' % self.deploy_dir
+		self.predict_tiles_dir = '%s/predict_pd_tiles' % self.deploy_dir
+		self.predict_fusion_tiles_dir = '%s/predict_pd_fusion_tiles' % self.deploy_dir
+		self.predict_crop_image_dir = '%s/predict_pd_crop_tiles' % self.deploy_dir
+		
 		# 分类权重
 		self.weight_file = '%s/weights.txt' % self.deploy_dir
 
@@ -214,6 +225,7 @@ class DeepPlanetConfig:
 
 		# 切割后的训练瓦片目录
 		self.analyze_tiles_dir = '%s/analyze_tiles' % self.data_root
+		self.analyze_tiles_overlap_dir = '%s/analyze_tiles_overlap' % self.data_root
 
 		# 切割后的训练瓦片目录
 		self.visualize_tiles_dir = '%s/visualize_tiles' % self.data_root

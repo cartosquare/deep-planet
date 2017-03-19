@@ -37,3 +37,5 @@ for file in files:
     shutil.copy(oldfile, newfile)
 
 shutil.copy('config/config.json', dist_dir)
+shutil.copytree('models', os.path.join(dist_dir, 'models'))
+shutil.copytree('js', os.path.join(dist_dir, 'js'))

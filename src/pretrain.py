@@ -383,7 +383,10 @@ def rm_invalid_tiles(src_dir, image_type, mode):
             if not is_png(file_path):
                 os.unlink(file_path)
 
-def create_overlap_predict_tiles(work_dir):
+def create_overlap_predict_tiles(work_dir, new_dir, overlap):
+    if not os.path.exists(new_dir):
+        os.mkdir(new_dir)
+
     files = os.listdir(work_dir)
     for file in files:
         if not is_png(file):
@@ -399,31 +402,62 @@ def create_overlap_predict_tiles(work_dir):
         x = int(items[1])
         y = int(items[2])
 
-        left_top = '%d_%d_%d.png' % (z, x, y)
-        right_top = '%d_%d_%d.png' % (z, x + 1, y)
-        left_bottom = '%d_%d_%d.png' % (z, x, y + 1)
-        right_bottom = '%d_%d_%d.png' % (z, x + 1, y + 1)
+        left = '%d_%d_%d.png' % (z, x - 1, y)
+        top = '%d_%d_%d.png' % (z, x, y - 1)
+        left_top = '%d_%d_%d.png' % (z, x - 1, y - 1)
 
+        left_file = os.path.join(work_dir, left)
+        top_file = os.path.join(work_dir, top)
         left_top_file = os.path.join(work_dir, left_top)
-        right_top_file = os.path.join(work_dir, right_top)
-        left_bottom_file = os.path.join(work_dir, left_bottom)
-        right_bottom_file = os.path.join(work_dir, right_bottom)
 
-        if os.path.exists(right_top_file) and os.path.exists(left_bottom_file) and os.path.exists(right_bottom_file):
+        if os.path.exists(left_file):
+            extent_left = True
+            width = 256 + overlap
+        else:
+            extent_left = False
+            width = 256
+        if os.path.exists(top_file):
+            extent_top = True
+            height = 256 + overlap
+        else:
+            extent_top = False
+            height = 256
+        
+        extent_left_and_top_corner = False
+        if extent_left and extent_top:
+            if not os.path.exists(left_top_file):
+                print('Warning: not exist left top file %s' % (left_top_file))  
+            else:
+                extent_left_and_top_corner = True
+
+        print('extent image %s to %d %d' % (file, width, height))
+        new_im = Image.new('RGB', (width, height))
+        center_image = Image.open(os.path.join(work_dir, file))
+        new_im.paste(center_image, (width - 256, height - 256))
+
+        if extent_left:
+            deltx = -(256 - overlap)
+            delty = overlap
+            print('paste image %s at %d %d' % (left_file, deltx, delty))
+            left_image = Image.open(left_file)
+            new_im.paste(left_image, (deltx, delty))
+        if extent_top:
+            deltx = overlap
+            delty = -(256 - overlap)
+            print('paste image %s at %d %d' % (top_file, deltx, delty))
+            top_image = Image.open(top_file)
+            new_im.paste(top_image, (deltx, delty))
+
+        if extent_left and extent_top and extent_left_and_top_corner:
+            deltx = -(256 - overlap)
+            delty = -(256 - overlap)
+            print('paste image %s at %d %d' % (left_top_file, deltx, delty))
             left_top_image = Image.open(left_top_file)
-            right_top_image = Image.open(right_top_file)
-            left_bottom_image = Image.open(left_bottom_file)
-            right_bottom_image = Image.open(right_bottom_file)
+            new_im.paste(left_top_image, (deltx, delty))
 
-            new_im = Image.new('RGB', (256, 256))
-            new_im.paste(left_top_image, (-128, -128))
-            new_im.paste(right_top_image, (128, -128))
-            new_im.paste(left_bottom_image, (-128, 128))
-            new_im.paste(right_bottom_image, (128, 128))
-
-            new_im_file = os.path.join(work_dir, 'overlap_%d_%d_%d.png' % (z, x, y))
-            #print('from %s|%s|%s|%s to %s' % (left_top, right_top, left_bottom, right_bottom, new_im_file))
-            new_im.save(new_im_file, "PNG")
+        new_im_file = os.path.join(new_dir, '%d_%d_%d.png' % (z, x, y))
+        print('saving to %s' % (new_im_file))
+        new_im.save(new_im_file, "PNG")
 
 
 def write_predict_txt(work_dir, file_path, image_type):
@@ -436,7 +470,11 @@ def write_predict_txt(work_dir, file_path, image_type):
                     f.write('%s %s\n' % (file_path, file_path))
             else:
                 if is_png(file_path):
-                    f.write('%s %s\n' % (file_path, file_path))
+                    img = io.imread(file_path)
+                    if (img.shape[0] == 384 and img.shape[1] == 384):
+                        f.write('%s %s\n' % (file_path, file_path))
+                    else:
+                        print img.shape
 
 
 def copy_labels():
@@ -938,11 +976,10 @@ if __name__=='__main__':
         else:
             log(flog, 'skip tiler tiles and remove invalid tiles progress ...')
     
-        # should we use overlapping tec to predict???
-        #if config.mode == 'predict':
-        #    create_overlap_predict_tiles(config.analyze_tiles_dir)
-        #    write_predict_txt(config.analyze_tiles_dir, config.test_txt, config.image_type)
-        write_predict_txt(config.analyze_tiles_dir, config.test_txt, config.image_type)
+        # overlapping for predict
+        # if config.mode == 'predict':
+        #    create_overlap_predict_tiles(config.analyze_tiles_dir, config.analyze_tiles_overlap_dir, config.overlap)
+        #    write_predict_txt(config.analyze_tiles_overlap_dir, config.test_txt, config.image_type)
     else:
         log(flog, 'skip analyze progress ...')
 
@@ -983,6 +1020,9 @@ if __name__=='__main__':
 
     
     if config.mode == 'predict':
+        create_overlap_predict_tiles(config.analyze_tiles_dir, config.analyze_tiles_overlap_dir, config.overlap)
+        write_predict_txt(config.analyze_tiles_overlap_dir, config.test_txt, config.image_type)
+
         shutil.copy(config.test_txt, '%s/predict.txt' % config.deploy_dir)
         log(flog, 'finished!')
         exit()
