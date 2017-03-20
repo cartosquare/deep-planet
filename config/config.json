@@ -14,10 +14,12 @@
     "ignore_class": "[int], ignore a class, often background. Not required, if not specified, will care about all the classes.",
     "tile_extent": "[array], training data extent, [minx, miny, maxx, maxy]",
     "deploy": "[array], the element in array should be one or many data_name",
-    "snapshot": "[int], inteval of saving trining result.",
+    "snapshot": "[int], inteval of saving training result.",
     "use_snapshot": "[int], use which snapshot to generate test weight.",
     "use_gpu": "[bool], use gpu or not",
     "gpu": "[bool], use which gpu",
+    "batch_size": "[int], batch size when training. default to 6",
+    "max_iter": "[int], max training iters, default to 400000",
     "label_colours": [
         {
             "name": "[str], name of class 1", 
