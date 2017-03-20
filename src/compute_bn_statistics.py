@@ -211,7 +211,7 @@ if __name__ == '__main__':
     else:
         minibatch_size = testable_msg.layer[0].dense_tiff_data_param.batch_size
     num_iterations = train_size // minibatch_size + train_size % minibatch_size
-    in_h, in_w =(256, 256)
+    in_h, in_w =(config.image_dim, config.image_dim)
 
     test_net, test_msg = make_test_files(BN_calc_path, weights, num_iterations,in_h, in_w)
     
