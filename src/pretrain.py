@@ -146,7 +146,7 @@ def tiler_tif(src, out, level, extent):
     worldOriginaly = 20037508.342787
 
     # tile size
-    tileSize = 256
+    tileSize = config.image_dim
     
     # resolutions for each level
     zoomReses =[156543.033928,78271.516964,39135.758482,19567.879241,9783.9396205,4891.96981025,2445.984905125,1222.9924525625,611.49622628125,305.748113140625,152.8740565703125,76.43702828515625,38.21851414257813,19.10925707128906,9.55462853564453,4.777314267822266,2.388657133911133,1.194328566955567,0.597164283477783,0.298582141738892,0.14929107086945,0.07464553543473];
@@ -181,7 +181,15 @@ def tiler_tif(src, out, level, extent):
             tileMaxy = worldOriginaly - j * tileExtent
             tileMiny = tileMaxy - tileExtent
         
-            command = "gdalwarp -of %s -te %s %s %s %s -ts 256 256 -r near -multi -q %s %s" % (out_format, format(tileMinx, '.10f'), format(tileMiny, '.10f'), format(tileMaxx, '.10f'), format(tileMaxy, '.10f'), src, tilepath)
+            if config.mode == 'train':
+                tile_size = config.image_dim
+            else:
+                # predict mode, extent on left and top
+                tileMinx = tileMinx - zoomReses[level] * config.overlap
+                tileMaxy = tileMaxy + zoomReses[level] * config.overlap
+                tile_size = config.image_dim + config.overlap
+
+            command = "gdalwarp -srcnodata 0 -dstnodata 0 -of %s -te %s %s %s %s -ts %d %d -r near -multi -q %s %s" % (out_format, format(tileMinx, '.10f'), format(tileMiny, '.10f'), format(tileMaxx, '.10f'), format(tileMaxy, '.10f'), tile_size, tile_size, src, tilepath)
             
             #print command
             os.system(command)
@@ -304,6 +312,8 @@ def proces_tif(tif_file):
 
 
 def proces_predict_tif(tif_file):
+    print(tif_file)
+
     if not is_tiff(tif_file):
         os.unlink(tif_file)
         return
@@ -983,6 +993,7 @@ if __name__=='__main__':
     else:
         log(flog, 'skip analyze progress ...')
 
+
     if config.process_visualize and not os.path.exists(config.visualize_tiles_dir):
         # Step 2
         if len(config.visualize_bands) == 0:
@@ -1020,6 +1031,10 @@ if __name__=='__main__':
 
     
     if config.mode == 'predict':
+        if config.image_type == 'tif':
+            # already doing overlap, just direct the folder
+            config.analyze_tiles_overlap_dir = config.analyze_tiles_dir
+
         create_overlap_predict_tiles(config.analyze_tiles_dir, config.analyze_tiles_overlap_dir, config.overlap)
         write_predict_txt(config.analyze_tiles_overlap_dir, config.test_txt, config.image_type)
 
