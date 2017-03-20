@@ -11,6 +11,7 @@ dist_dir = 'dist'
 if os.path.exists(dist_dir):
     shutil.rmtree(dist_dir)
 os.mkdir(dist_dir)
+os.mkdir(os.path.join(dist_dir, src_dir))
 
 files = os.listdir(src_dir)
 for file in files:
@@ -31,7 +32,7 @@ for file in files:
 		continue
 
     oldfile = os.path.join(src_dir, file)
-    newfile = os.path.join(dist_dir, file)
+    newfile = os.path.join(os.path.join(dist_dir, src_dir), file)
 
     print('dist: %s -> %s' % (oldfile, newfile))
     shutil.copy(oldfile, newfile)
