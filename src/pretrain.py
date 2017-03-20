@@ -312,8 +312,6 @@ def proces_tif(tif_file):
 
 
 def proces_predict_tif(tif_file):
-    print(tif_file)
-
     if not is_tiff(tif_file):
         os.unlink(tif_file)
         return
@@ -471,6 +469,8 @@ def create_overlap_predict_tiles(work_dir, new_dir, overlap):
 
 
 def write_predict_txt(work_dir, file_path, image_type):
+    image_size = config.image_dim + config.overlap
+
     with open(file_path, 'w') as f:
         files = os.listdir(work_dir)
         for file in files:
@@ -481,7 +481,7 @@ def write_predict_txt(work_dir, file_path, image_type):
             else:
                 if is_png(file_path):
                     img = io.imread(file_path)
-                    if (img.shape[0] == 384 and img.shape[1] == 384):
+                    if (img.shape[0] == image_size and img.shape[1] == image_size):
                         f.write('%s %s\n' % (file_path, file_path))
                     else:
                         print img.shape
@@ -1034,8 +1034,9 @@ if __name__=='__main__':
         if config.image_type == 'tif':
             # already doing overlap, just direct the folder
             config.analyze_tiles_overlap_dir = config.analyze_tiles_dir
+        else:
+            create_overlap_predict_tiles(config.analyze_tiles_dir, config.analyze_tiles_overlap_dir, config.overlap)
 
-        create_overlap_predict_tiles(config.analyze_tiles_dir, config.analyze_tiles_overlap_dir, config.overlap)
         write_predict_txt(config.analyze_tiles_overlap_dir, config.test_txt, config.image_type)
 
         shutil.copy(config.test_txt, '%s/predict.txt' % config.deploy_dir)
