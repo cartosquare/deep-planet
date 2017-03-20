@@ -28,7 +28,7 @@ def gen_solver_file():
         f.write('stepsize: 10000000\n')
         f.write('display: 20\n')
         f.write('momentum: 0.9\n')
-        f.write('max_iter: 400000\n')
+        f.write('max_iter: %d\n' % (config.max_iter))
         f.write('weight_decay: 0.0005\n')
         f.write('snapshot: %d\n' % (config.snapshot))
         f.write('snapshot_prefix: "%s"\n' % (os.path.join(config.deploy_dir, config.snapshot_prefix)))
@@ -53,7 +53,7 @@ def gen_train_file():
                     ftrain.write('  top: "label"\n')
                     ftrain.write('  dense_tiff_data_param {\n')
                     ftrain.write('    source: "%s/train.txt"\n' % config.deploy_dir)
-                    ftrain.write('    batch_size: 6\n')
+                    ftrain.write('    batch_size: %d\n' % (config.batch_size))
                     ftrain.write('    shuffle: true\n')
                     ftrain.write('  }\n')
                 else:
@@ -62,7 +62,7 @@ def gen_train_file():
                     ftrain.write('  top: "label"\n')
                     ftrain.write('  dense_image_data_param {\n')
                     ftrain.write('    source: "%s/train.txt"\n' % config.deploy_dir)
-                    ftrain.write('    batch_size: 6\n')
+                    ftrain.write('    batch_size: %d\n' % (config.batch_size))
                     ftrain.write('    shuffle: true\n')
                     ftrain.write('  }\n')
             if len(items) == 2 and items[0] == 'name' and items[1] == ' "conv1_1_D"':

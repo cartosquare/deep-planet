@@ -29,8 +29,6 @@ class DeepPlanetConfig:
 			self.process_analyze = True
 
 		# 训练样本大小，目前只支持 256px * 256px
-		self.dim_row = 256
-		self.dim_col = 256
 		self.image_dim = 256
 
 		# 训练样本分辨率（0-19）
@@ -64,8 +62,8 @@ class DeepPlanetConfig:
 			self.src_nodata = '0'
 
 		# 训练的波段
-		#rapideye false-color-compose bands: [5, 3, 2]
-		# FG false-color compose bands: [4, 3, 2]
+		# rapideye false-color-compose bands: [5, 3, 2]
+		# GF false-color compose bands: [4, 3, 2]
 		# planetlabs [1, 2, 3]
 		if 'analyze_bands' in pobject:
 			self.analyze_bands = pobject['analyze_bands']
@@ -144,6 +142,16 @@ class DeepPlanetConfig:
 			self.use_snapshot = pobject['use_snapshot']
 		else:
 			self.use_snapshot = 100000
+		
+		if 'batch_size' in pobject:
+			self.batch_size = pobject['batch_size']
+		else:
+			self.batch_size = 6
+
+		if 'max_iter' in pobject:
+			self.max_iter = pobject['max_iter']
+		else:
+			self.max_iter = 400000
 			
 		# 测试样本数
 		if 'test_iter' in pobject:
@@ -157,7 +165,6 @@ class DeepPlanetConfig:
 		else:
 			print 'label_colours must specified!!!'
 			return False
-
 
 		# 发布训练样本的目录
 		self.deploy_dir = ''
@@ -173,9 +180,10 @@ class DeepPlanetConfig:
 		self.log_file = '%s/log.txt' % self.data_root
 
 		###################### 地图级别 #########################################
-		worldOriginalx = -20037508.342787
-    	worldOriginaly = 20037508.342787
-		zoomReses =[156543.033928,78271.516964,39135.758482,19567.879241,9783.9396205,4891.96981025,2445.984905125,1222.9924525625,611.49622628125,305.748113140625,152.8740565703125,76.43702828515625,38.21851414257813,19.10925707128906,9.55462853564453,4.777314267822266,2.388657133911133,1.194328566955567,0.597164283477783,0.298582141738892,0.14929107086945,0.07464553543473]
+		self.worldOriginalx = -20037508.342787
+		self.worldOriginaly = 20037508.342787
+		self.zoomReses = [156543.033928,78271.516964,39135.758482,19567.879241,9783.9396205,4891.96981025,2445.984905125,1222.9924525625,611.49622628125,305.748113140625,152.8740565703125,76.43702828515625,38.21851414257813,19.10925707128906,9.55462853564453,4.777314267822266,2.388657133911133,1.194328566955567,0.597164283477783,0.298582141738892,0.14929107086945,0.07464553543473]
+
 		###################### 和训练样本相关的变量 ###############################
 		# 训练网络
 		self.model_dir = 'models'
