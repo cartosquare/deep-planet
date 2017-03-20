@@ -142,14 +142,14 @@ def tiler_tif(src, out, level, extent):
     print minx, miny, maxx, maxy
       
     # mercator parameters
-    worldOriginalx = -20037508.342787
-    worldOriginaly = 20037508.342787
+    worldOriginalx = config.worldOriginalx
+    worldOriginaly = config.worldOriginaly
 
     # tile size
     tileSize = config.image_dim
     
     # resolutions for each level
-    zoomReses =[156543.033928,78271.516964,39135.758482,19567.879241,9783.9396205,4891.96981025,2445.984905125,1222.9924525625,611.49622628125,305.748113140625,152.8740565703125,76.43702828515625,38.21851414257813,19.10925707128906,9.55462853564453,4.777314267822266,2.388657133911133,1.194328566955567,0.597164283477783,0.298582141738892,0.14929107086945,0.07464553543473];
+    zoomReses = config.zoomReses
     
     tileExtent = tileSize * zoomReses[level]
     minBundlex = int((minx - worldOriginalx) / tileExtent)
@@ -246,8 +246,8 @@ def tiler_png(src, out, level):
 def proces_analyze_img(image_file):
     if is_png(image_file):
         img = io.imread(image_file)
-        for x in range(0, 256):
-            for y in range(0, 256):
+        for x in range(0, config.image_dim):
+            for y in range(0, config.image_dim):
                 #if img[x][y][0] == 0 and img[x][y][1] == 0 and img[x][y][2] == 0 and img[x][y][3] == 0:
                 if img[x][y][0] == 0 and img[x][y][1] == 0 and img[x][y][2] == 0:
                     os.unlink(image_file)
@@ -256,8 +256,8 @@ def proces_analyze_img(image_file):
 def proces_predict_img(image_file):
     if is_png(image_file):
         img = io.imread(image_file)
-        for x in range(0, 256):
-            for y in range(0, 256):
+        for x in range(0, config.image_dim + config.overlap):
+            for y in range(0, config.image_dim + config.overlap):
                 if img[x][y][0] != 0 or img[x][y][1] != 0 or img[x][y][2] != 0:
                     return 
         os.unlink(image_file)
@@ -420,16 +420,16 @@ def create_overlap_predict_tiles(work_dir, new_dir, overlap):
 
         if os.path.exists(left_file):
             extent_left = True
-            width = 256 + overlap
+            width = config.image_dim + overlap
         else:
             extent_left = False
-            width = 256
+            width = config.image_dim
         if os.path.exists(top_file):
             extent_top = True
-            height = 256 + overlap
+            height = config.image_dim + overlap
         else:
             extent_top = False
-            height = 256
+            height = config.image_dim
         
         extent_left_and_top_corner = False
         if extent_left and extent_top:
@@ -441,24 +441,24 @@ def create_overlap_predict_tiles(work_dir, new_dir, overlap):
         print('extent image %s to %d %d' % (file, width, height))
         new_im = Image.new('RGB', (width, height))
         center_image = Image.open(os.path.join(work_dir, file))
-        new_im.paste(center_image, (width - 256, height - 256))
+        new_im.paste(center_image, (width - config.image_dim, height - config.image_dim))
 
         if extent_left:
-            deltx = -(256 - overlap)
+            deltx = -(config.image_dim - overlap)
             delty = overlap
             print('paste image %s at %d %d' % (left_file, deltx, delty))
             left_image = Image.open(left_file)
             new_im.paste(left_image, (deltx, delty))
         if extent_top:
             deltx = overlap
-            delty = -(256 - overlap)
+            delty = -(config.image_dim - overlap)
             print('paste image %s at %d %d' % (top_file, deltx, delty))
             top_image = Image.open(top_file)
             new_im.paste(top_image, (deltx, delty))
 
         if extent_left and extent_top and extent_left_and_top_corner:
-            deltx = -(256 - overlap)
-            delty = -(256 - overlap)
+            deltx = -(config.image_dim - overlap)
+            delty = -(config.image_dim - overlap)
             print('paste image %s at %d %d' % (left_top_file, deltx, delty))
             left_top_image = Image.open(left_top_file)
             new_im.paste(left_top_image, (deltx, delty))
@@ -569,8 +569,8 @@ def tiler_overlay():
 
 
 def color_map_2class(gray_img):
-    for x in range(0, 256):
-        for y in range(0, 256):
+    for x in range(0, config.image_dim):
+        for y in range(0, config.image_dim):
             if gray_img[x][y] > 0:
                 gray_img[x][y] = 1
                 
@@ -578,9 +578,9 @@ def color_map_2class(gray_img):
 
 
 def color_map(img):
-    gray_img = numpy.zeros((256, 256))
-    for x in range(0, 256):
-        for y in range(0, 256):
+    gray_img = numpy.zeros((config.image_dim, config.image_dim))
+    for x in range(0, config.image_dim):
+        for y in range(0, config.image_dim):
             find_label = False
             for k in config.label_colours:
                 label_color = k['color']
@@ -750,8 +750,8 @@ def calculate_weights():
         for i in range(0, nclass):
             class_in_file.append(False)
 
-        for i in range(0, 256):
-            for j in range(0, 256): 
+        for i in range(0, config.image_dim):
+            for j in range(0, config.image_dim): 
                 if config.ignore_class is not None and img[i][j] == config.ignore_class:
                     continue
 
@@ -768,8 +768,8 @@ def calculate_weights():
 
     class_freq = []
     for i in range(nclass):
-        # f(class) = frequency(class) / (image_count(class) * 256 * 256)
-        freq = float(class_info[i]['pixels']) / float(class_info[i]['files'] * 256 * 256)
+        # f(class) = frequency(class) / (image_count(class) * config.image_dim * config.image_dim)
+        freq = float(class_info[i]['pixels']) / float(class_info[i]['files'] * config.image_dim * config.image_dim)
         class_freq.append(freq)
 
     print class_freq
