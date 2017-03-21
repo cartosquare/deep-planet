@@ -62,6 +62,7 @@ if __name__ == '__main__':
 
     print('Model: %s' % model)
     print('Weights: %s' % weights)
+    print('iters: %d' % iter)
 
     if not os.path.exists(pd_dir):
         os.mkdir(pd_dir)
@@ -72,9 +73,9 @@ if __name__ == '__main__':
         caffe.set_mode_gpu()
     else:
         caffe.set_mode_cpu()
-
-	net = caffe.Net(model, weights, caffe.TEST)
-	for i in range(0, iter):
+    caffe.set_device(config.gpu)
+    net = caffe.Net(model, weights, caffe.TEST)
+    for i in range(0, iter):
 		print 'iter %d' % i
 
 		net.forward()
