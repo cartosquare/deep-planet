@@ -109,6 +109,9 @@ def convert_predict():
 
             shutil.copy(old_file, new_file)
 
+            count = count + 1
+
+
 def get_file(filename):
     file_path = os.path.join(config.predict_fusion_tiles_dir, filename)
     if not os.path.exists(file_path):
