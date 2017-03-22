@@ -242,7 +242,7 @@ def crop():
         
         tile_file = os.path.join(config.predict_fusion_tiles_dir, tile)
         tile_image = Image.open(tile_file)
-        new_im = Image.new('RGB', (image_size - overlap, image_size - overlap))
+        new_im = Image.new('RGBA', (image_size - overlap, image_size - overlap))
         new_im.paste(tile_image, (-overlap, -overlap))
 
         new_im_file = os.path.join(config.predict_crop_image_dir, tile)
