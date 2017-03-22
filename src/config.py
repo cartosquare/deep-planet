@@ -194,7 +194,7 @@ class DeepPlanetConfig:
 		# 训练好的网络参数
 		self.snapshot_dir = '%s/training' % self.model_dir
 		self.snapshot_prefix = '%s/dp' % self.snapshot_dir
-		self.trained_weights = '%s_iter_%d.caffemodel' % (self.snapshot_prefix, self.snapshot)
+		self.trained_weights = '%s_iter_%d.caffemodel' % (self.snapshot_prefix, self.use_snapshot)
 
 		# 测试网络
 		self.test_dir = '%s/inference' % self.model_dir
