@@ -206,7 +206,8 @@ class DeepPlanetConfig:
 		# 测试数据的输出目录
 		self.test_gt_dir = '%s/gt' % self.deploy_dir
 		self.test_pd_dir = '%s/pd' % self.deploy_dir
-
+		self.test_statistic_file = '%s/acc.txt' % self.deploy_dir
+		
 		# 预测数据输出目录
 		self.predict_dir = '%s/predict_pd' % self.deploy_dir
 		self.predict_tiles_dir = '%s/predict_pd_tiles' % self.deploy_dir
