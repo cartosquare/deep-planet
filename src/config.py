@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import numpy as np
-
+import os
 ##########################################
 #
 # configuration class
@@ -167,7 +167,10 @@ class DeepPlanetConfig:
 			return False
 
 		# 发布训练样本的目录
-		self.deploy_dir = ''
+		self.deploy_dir = 'output/'
+		if not os.path.exists(self.deploy_dir):
+			os.mkdir(self.deploy_dir)
+
 		for i in range(len(self.deploy)):
 			if i == (len(self.deploy) - 1):
 				self.deploy_dir = self.deploy_dir + self.deploy[i]
@@ -207,7 +210,7 @@ class DeepPlanetConfig:
 		self.test_gt_dir = '%s/gt' % self.deploy_dir
 		self.test_pd_dir = '%s/pd' % self.deploy_dir
 		self.test_statistic_file = '%s/acc.txt' % self.deploy_dir
-		
+
 		# 预测数据输出目录
 		self.predict_dir = '%s/predict_pd' % self.deploy_dir
 		self.predict_tiles_dir = '%s/predict_pd_tiles' % self.deploy_dir
