@@ -2,3 +2,6 @@ output/
 deploy/
 dist/
 training_set/
+config/
+*.pyc
+.*

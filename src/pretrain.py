@@ -525,8 +525,8 @@ def copy_labels():
         x = items[1]
         y = items[2]
 
-        label_old_file_path = os.path.join(label_old_dir, '%s_%s_%s.png' % (z, x, y))
-        label_new_file_path = os.path.join(label_new_dir, '%s_%s_%s.png' % (z, x, y))
+        label_old_file_path = os.path.join(label_old_dir, '%s_%s_%s.json' % (z, x, y))
+        label_new_file_path = os.path.join(label_new_dir, '%s_%s_%s.json' % (z, x, y))
 
         if not os.path.exists(label_old_file_path):
             print 'not exists: ', label_old_file_path
@@ -547,7 +547,7 @@ def tiler_overlay():
         "def": config.style_file,
         "save_cloud": 0,
         "levels": [int(config.tile_level)],
-        "types": [0],
+        "types": [6],
         "store_backend": "file",
         "boundary": config.tile_extent,
         "overwrite": 1,
@@ -556,77 +556,131 @@ def tiler_overlay():
         "render_label": 0,
         "expand": 0
     }
-
     with open(config.tiler_file, 'w') as outfile:
         json.dump(config_object, outfile)
+
+    # style specify
+    style_object = {
+        "background_color": [255, 255, 255],
+        "background_opacity": 1.0,
+        "data_sources": {
+            "ds": {
+                "source": "overlay",
+                "type": "shapefile"
+            }
+        },
+        "layers": {
+        }
+    }
+
+    layer_list = []
+    file_list = os.listdir(config.overlay_dir)
+    for file in file_list:
+        items = file.split('.')
+        if items[-1] == 'shp':
+            layer_list.append(items[0])
+    print(layer_list)
+
+    for layer in layer_list:
+        layer_object = {
+            "data_source": "ds",
+	        "data_name": layer,
+	        "rules": [
+		        {
+		            "res_max": 10,
+		            "res_min": 0,
+					"utfgrid_fields": config.class_field,
+					"grid_size": 1,
+		            "symbol_type": "fill",
+		            "fill_color": [255, 0, 0]
+		        }
+	        ]
+        }
+        style_object['layers'][layer] = layer_object
+    
+    with open(config.style_file, 'w') as outfile:
+        json.dump(style_object, outfile)
+
+    # lod object
+    lod_object = {
+        "originX": config.worldOriginalx,
+        "originY": config.worldOriginaly,
+        "minX": config.worldOriginalx,
+        "maxX": -config.worldOriginalx,
+        "minY": -config.worldOriginaly,
+        "maxY": config.worldOriginaly,
+        "tileSize": config.image_dim,
+        "zoomReses": config.zoomReses
+    }
+    with open(config.lod_file, 'w') as outfile:
+        json.dump(lod_object, outfile)
 
     if not os.path.exists(config.overlay_tiles_dir):
         os.mkdir(config.overlay_tiles_dir)
 
+    # start the job
     command = './bin/tiler %s' % (config.tiler_file)
     print command
     os.system(command)
 
 
-def color_map_2class(gray_img):
-    for x in range(0, config.image_dim):
-        for y in range(0, config.image_dim):
-            if gray_img[x][y] > 0:
-                gray_img[x][y] = 1
-                
-    return gray_img.astype(int)
+def decode_id(codepoint):
+    codepoint = ord(codepoint)
+    if codepoint >= 93:
+        codepoint-=1
+    if codepoint >= 35:
+        codepoint-=1
+    codepoint -= 32
+    return codepoint
 
 
-def color_map(img):
-    gray_img = numpy.zeros((config.image_dim, config.image_dim))
-    for x in range(0, config.image_dim):
-        for y in range(0, config.image_dim):
-            find_label = False
-            for k in config.label_colours:
-                label_color = k['color']
-                if img[x][y][0] == label_color[0] and img[x][y][1] == label_color[1] and img[x][y][2] == label_color[2]:
-                    label = k['label']
-                    gray_img[x][y] = label
-   
-                    find_label = True
-                    break
+def resolve(grid, row, col):
+    """ Resolve the attributes for a given pixel in a grid.
+    """
+    row = grid['grid'][row]
+    utf_val = row[col]
+    codepoint = decode_id(utf_val)
+    key = grid['keys'][codepoint]
+    return grid['data'].get(key)  
 
-            if not find_label:
-                if config.ignore_class is not None:
-                    gray_img[x][y] = config.ignore_class
-                else:
-                    print('error not find label, ', gray_img[x][y])
-                    print(img[x][y])
-
-    return gray_img.astype(int)
 
 def proces_label_img(tile):
-    if not is_png(tile):
-        print('not png: ' + tile)
+    # check file type
+    items = tile.split('.')
+    if len(items) != 2 or items[1] != 'json':
+        print('not grid file: ', tile)
         return
 
     tile_file = os.path.join(config.valid_overlay_tiles_dir, tile)
-    new_tile_file = os.path.join(config.labels_dir, tile)
+    new_tile_file = os.path.join(config.labels_dir, items[0] + '.png')
 
-    if not os.path.exists(new_tile_file):
-        img = io.imread(tile_file)
+    # load grids
+    with open(tile_file) as json_data:
+        grid = json.load(json_data)
+    
+    img = numpy.zeros((config.image_dim, config.image_dim))
+    for row in range(0, config.image_dim):
+        for col in range(0, config.image_dim):
+            key_val = resolve(grid, row, col)
 
-        if config.classes > 2:
-            if (type(img[0][0]) == numpy.uint8):
-                print('invalid tile: ' + tile_file)
-                return
-            gray_img = color_map(img)
-        else:
-            if (type(img[0][0]) != numpy.uint8):
-                print('invalid tile: ' + tile_file)
-                return
-            gray_img = color_map_2class(img)
+            find = False
+            if key_val is not None:
+                val = key_val[config.class_field]
+                for k in range(0, len(config.class_names)):
+                    if val == config.class_names[k]:
+                        img[row][col] = k
+                        find = True
+                        break
+            if not find:
+                # Shall we really need ignore class?
+                img[row][col] = config.ignore_class
+    
+    img = img.astype(int)
+    io.imsave(new_tile_file, img)
 
-        io.imsave(new_tile_file, gray_img)
 
-
-def color2gray():
-    log(flog, 'convert color images from %s into gray iamage %s ...' % (config.valid_overlay_tiles_dir, config.labels_dir))
+def grid2image():
+    log(flog, 'convert grids from %s into image %s ...' % (config.valid_overlay_tiles_dir, config.labels_dir))
 
     color_dir = config.valid_overlay_tiles_dir
     gray_dir = config.labels_dir
@@ -636,6 +690,10 @@ def color2gray():
         os.mkdir(gray_dir)
 
     tiles = os.listdir(color_dir)
+
+    # for tile in tiles:
+    #     print(tile)
+    #     proces_label_img(tile)
 
     # progress bar
     widgets = [Bar('>'), ' ', Percentage(), ' ', Timer(), ' ', ETA()]
@@ -1059,14 +1117,14 @@ if __name__=='__main__':
         else:
             log(flog, 'skip copy_labels progress ...')
         if not os.path.exists(config.labels_dir):
-            color2gray()
+            grid2image()
         else:
-            log(flog, 'skip color2gray progress ...')
+            log(flog, 'skip grid2image progress ...')
     else:
-        log(flog, 'skip tiler vector tiles, copy labels and color2gray progress ...')
+        log(flog, 'skip tiler vector tiles, copy labels and grid2image progress ...')
 
     ######## split train test ##########
-    split_train_test()
+    #split_train_test()
 
     ######## deploy ####################
     if len(config.deploy) >= 1:
