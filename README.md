@@ -7,8 +7,11 @@
 
 
 ## 成果
-## 道路分割
+## 湛江市道路分割
 Global acc = 0.98796 Class average acc = 0.72592 Mean Int over Union = 0.64794
+
+## 北京市道路分割
+Global acc = 0.98006 Class average acc = 0.83417 Mean Int over Union = 0.6132
 
 ## 生态分割
 Global acc = 0.68479 Class average acc = 0.69358 Mean Int over Union = 0.44979
