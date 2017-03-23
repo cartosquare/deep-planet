@@ -1,12 +1,10 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
-#import matplotlib.pyplot as plt
 import os
-import os.path
 import json
-import scipy
-import math
+#import scipy
+#import math
 import shutil
 from PIL import Image
 from skimage import io
