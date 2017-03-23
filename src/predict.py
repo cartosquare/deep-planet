@@ -41,7 +41,6 @@ def predict():
                 iter = iter + 1
 
     pd_dir = config.predict_dir
-    label_colours = config.label_colours
 
     log(flog, 'predicting %d images using model %s and weights %s to %s' % (iter, model, weights, pd_dir))
     print('Model: %s' % model)
@@ -76,10 +75,10 @@ def predict():
 	    a = ind.copy()
 
 	    for l in range(0, config.classes):
-		    r[ind==l] = label_colours[l]['color'][0]
-		    g[ind==l] = label_colours[l]['color'][1]
-		    b[ind==l] = label_colours[l]['color'][2]
-		    a[ind==l] = label_colours[l]['color'][3]
+		    r[ind==l] = config.class_colors[l][0]
+		    g[ind==l] = config.class_colors[l][1]
+		    b[ind==l] = config.class_colors[l][2]
+		    a[ind==l] = config.class_colors[l][3]
 
 	    rgba = np.zeros((ind.shape[0], ind.shape[1], 4))
 	    rgba[:,:,0] = r / 255.0

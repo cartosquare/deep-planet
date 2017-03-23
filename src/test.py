@@ -58,7 +58,6 @@ if __name__ == '__main__':
 
     gt_dir = config.test_gt_dir
     pd_dir = config.test_pd_dir
-    label_colours = config.label_colours
 
     print('Model: %s' % model)
     print('Weights: %s' % weights)
