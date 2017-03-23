@@ -34,7 +34,7 @@ if __name__ == '__main__':
     if len(sys.argv) < 2:
         print('need config file!!!\n')
         exit()
-    
+
     config_cmd = parseOptions(sys.argv[1])
     config = DeepPlanetConfig()
     if not config.Initialize(config_cmd):
@@ -71,43 +71,27 @@ if __name__ == '__main__':
 
     if config.use_gpu:
         caffe.set_mode_gpu()
+        caffe.set_device(config.gpu)
     else:
         caffe.set_mode_cpu()
-    caffe.set_device(config.gpu)
+
     net = caffe.Net(model, weights, caffe.TEST)
     for i in range(0, iter):
-		print 'iter %d' % i
+        print('iter %d' % i)
+        net.forward()
 
-		net.forward()
+        label = net.blobs['label'].data
+        label = np.squeeze(label[0, :, :, :])
+        label = label.astype(int)
 
-		image = net.blobs['data'].data
-		label = net.blobs['label'].data
-		predicted = net.blobs['prob'].data
+        predicted = net.blobs['prob'].data
+        output = np.squeeze(predicted[0, :, :, :])
+        ind = np.argmax(output, axis=0)
+        ind = ind.astype(int)
 
-		image = np.squeeze(image[0,:,:,:])
-		output = np.squeeze(predicted[0,:,:,:])
-		ind = np.argmax(output, axis=0)
-
-		r = ind.copy()
-		r_gt = label.copy()
-
-		for l in range(0, config.classes):
-			r[ind==l] = label_colours[l]['label']
-			r_gt[label==l] = label_colours[l]['label']
-
-		rgb = np.zeros((ind.shape[0], ind.shape[1]))
-		rgb[:,:] = r
-		rgb_gt = np.zeros((ind.shape[0], ind.shape[1]))
-		rgb_gt[:,:] = r_gt
-	
-		rgb = rgb.astype(int)
-		rgb_gt = rgb_gt.astype(int)
-
-		io.imsave('%s/%d.png' % (gt_dir, i), rgb_gt)
-		io.imsave('%s/%d.png' % (pd_dir, i), rgb)
-
+        io.imsave('%s/%d.png' % (pd_dir, i), ind)
+        io.imsave('%s/%d.png' % (gt_dir, i), label)
 
     log(flog, 'success.')
-    
-    print 'Success!'
 
+    print 'Success!'
