@@ -78,6 +78,12 @@ class DeepPlanetConfig:
 			print('warning: no visualize_bands set! default to [1 2 3]')
 			self.visualize_bands = [1, 2, 3]
 
+		# 合并时是否使用虚拟数据集
+		if 'virtual_dataset' in pobject:
+			self.virtual_dataset = pobject['virtual_dataset']
+		else:
+			self.virtual_dataset = False
+			
 		# 需要分割的类别数
 		if 'classes' in pobject:
 			self.classes = pobject['classes']

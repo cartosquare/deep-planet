@@ -960,13 +960,15 @@ if __name__=='__main__':
 
         # Step 4, merge tifs
         # for training, as virtual dataset is efficient
-        #merge_as_virtual_dataset(analyze_dir, config.merged_analyze_file)
         tif_count, tif_file = tiff_count(analyze_dir)
         print tif_count, tif_file
         if tif_count > 1:
             if not os.path.exists(config.merged_analyze_file):
-                merge(analyze_dir, config.merged_analyze_file)
-                build_file_overview(config.merged_analyze_file)
+                if confi.virtual_dataset:
+                    merge_as_virtual_dataset(analyze_dir, config.merged_analyze_file)
+                else:
+                    merge(analyze_dir, config.merged_analyze_file)
+                    build_file_overview(config.merged_analyze_file)
             else:
                 log(flog, 'skip merge and build overview progress ...')
         else:
@@ -1016,8 +1018,11 @@ if __name__=='__main__':
         tif_count, tif_file = tiff_count(visualize_dir)
         if tif_count > 1:
             if not os.path.exists(config.merged_visualize_file):
-                merge(visualize_dir, config.merged_visualize_file)
-                build_file_overview(config.merged_visualize_file)
+                if confi.virtual_dataset:
+                    merge_as_virtual_dataset(visualize_dir, config.merged_visualize_file)
+                else:
+                    merge(visualize_dir, config.merged_visualize_file)
+                    build_file_overview(config.merged_visualize_file)
             else:
                 log(flog, 'skip merge and build overview progress ...')
         else:

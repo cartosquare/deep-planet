@@ -1,11 +1,4 @@
-*.png
-*.tif
-training_set/
-build/
-*.txt
-*.pyc
-*.spec
-*.mbtiles
-bin/tiler
-dist/
+output/
 deploy/
+dist/
+training_set/
