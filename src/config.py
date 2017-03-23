@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 import os
+import random
+
 ##########################################
 #
 # configuration class
@@ -96,6 +98,13 @@ class DeepPlanetConfig:
 		else:
 			self.overlap = 128
 
+		# class filed in shapefile
+		if 'class_field' in pobject:
+			self.class_field = pobject['class_field']
+		else:
+			print('warning: must specify class field!')
+			return False
+
 		#以及需要忽略的类别（一般是背景）
 		#ignore_class = None # 
 		if 'ignore_class' in pobject:
@@ -166,11 +175,17 @@ class DeepPlanetConfig:
 			self.test_iter = None
 
 		# 类别标签
-		if 'label_colours' in pobject:
-			self.label_colours = pobject['label_colours']
+		if 'class_names' in pobject:
+			self.class_names = pobject['class_names']
 		else:
-			print 'label_colours must specified!!!'
+			print 'class_names must specified!!!'
 			return False
+		if 'class_colors' in pobject:
+			self.class_colors = pobject['class_colors']
+		else:
+			self.class_colors = []
+			for i in range(0, len(self.class_names)):
+				self.class_colors.append([random.randint(0, 255),  random.randint(0, 255), random.randint(0, 255), 255])
 
 		# 发布训练样本的目录
 		self.deploy_dir = 'output/'
