@@ -15,6 +15,9 @@ import multiprocessing
 from progressbar import *
 from skimage import io
 import json
+import globalmaptiles
+import mapnik
+import ogr
 from config import DeepPlanetConfig
 
 
@@ -131,74 +134,60 @@ def merge(src_dir, merged_file):
 def tiler_tif(src, out, level, extent): 
     log(flog, 'tilering level %d, extent %s, from %s to %s ...' % (level, str(extent), src, out))
     create_directory_if_not_exist(out)
-
-    out_format = 'GTiff'
     
+    mercator = globalmaptiles.GlobalMercator()
     # tile extent
-    minx = extent[0]
-    miny = extent[1]
-    maxx = extent[2]
-    maxy = extent[3]
-    print minx, miny, maxx, maxy
-      
-    # mercator parameters
-    worldOriginalx = config.worldOriginalx
-    worldOriginaly = config.worldOriginaly
+    dataset = gdal.Open(src, gdal.GA_ReadOnly)
+    if dataset is None:
+        print('dataset is null', src)
+        return 
 
-    # tile size
-    tileSize = config.image_dim
-    
-    # resolutions for each level
-    zoomReses = config.zoomReses
-    
-    tileExtent = tileSize * zoomReses[level]
-    minBundlex = int((minx - worldOriginalx) / tileExtent)
-    minBundley = int((worldOriginaly - maxy) / tileExtent)
 
-    maxBundlex = int((maxx - worldOriginalx) / tileExtent)
-    maxBundley = int((worldOriginaly - miny) / tileExtent)
+    print 'Projection is ',dataset.GetProjection()
+    geotransform = dataset.GetGeoTransform()
+    if not geotransform is None:
+        map_minx = geotransform[0]
+        map_maxy = geotransform[3]
+        map_maxx = map_minx + geotransform[1] * dataset.RasterXSize
+        map_miny = map_maxy + geotransform[5] * dataset.RasterYSize
+    else:
+        print('no geotransform find', src)
+        return
 
-    totalBundles = (maxBundlex - minBundlex + 1) * (maxBundley - minBundley + 1)
-    print "[Normal] total tiles #%s" % totalBundles
+    print map_minx, map_miny, map_maxx, map_maxy
     
-    step = totalBundles / 50 + 1  
+    tz = int(config.tile_level)
+    tminx, tminy = mercator.MetersToTile(map_minx, map_miny, tz)
+    tmaxx, tmaxy = mercator.MetersToTile(map_maxx, map_maxy, tz)
+
+    total_tiles = (tmaxx - tminx + 1) * (tmaxy - tminy + 1)
+    # progress bar
+    widgets = [Bar('>'), ' ', Percentage(), ' ', Timer(), ' ', ETA()]
+    pbar = ProgressBar(widgets=widgets, maxval=total_tiles).start()
     count = 0
-    maxIdx = 2 ** level - 1
-    print "Max Idx: ", maxIdx
-    sys.stdout.flush()
+    for ty in range(tminy, tmaxy + 1):
+        for tx in range(tminx, tmaxx + 1):
+            count = count + 1
+            pbar.update(count)
 
-    for i in range(minBundlex, maxBundlex + 1):
-        if i > maxIdx:
-            continue
-        for j in range(minBundley, maxBundley + 1):
-            if j > maxIdx:
-                continue
-                
-            tilepath = os.path.join(out, "%s" % (str(level) + "_" + str(i) + "_" + str(j) + ".tif"))
-           
-            tileMinx = worldOriginalx + i * tileExtent
-            tileMaxx = tileMinx + tileExtent
-            tileMaxy = worldOriginaly - j * tileExtent
-            tileMiny = tileMaxy - tileExtent
-        
+            ymax = 1 << tz
+            invert_ty = ymax - ty - 1
+            # ty for TMS bottom origin, invert_ty Use top origin tile scheme (like OSM or GMaps)
+            tilepath = os.path.join(out, "%d_%d_%d.tif" % (tz, tx, invert_ty))
+
+            (minx, miny, maxx, maxy) = mercator.TileBounds(tx, ty, tz)
             if config.mode == 'train':
                 tile_size = config.image_dim
             else:
                 # predict mode, extent on left and top
-                tileMinx = tileMinx - zoomReses[level] * config.overlap
-                tileMaxy = tileMaxy + zoomReses[level] * config.overlap
+                minx = minx - mercator.Resolution[tz] * config.overlap
+                maxy = maxy + mercator.Resolution[tz] * config.overlap
                 tile_size = config.image_dim + config.overlap
 
-            command = "gdalwarp -srcnodata 0 -dstnodata 0 -of %s -te %s %s %s %s -ts %d %d -r near -multi -q %s %s" % (out_format, format(tileMinx, '.10f'), format(tileMiny, '.10f'), format(tileMaxx, '.10f'), format(tileMaxy, '.10f'), tile_size, tile_size, src, tilepath)
+            command = "gdalwarp -srcnodata 0 -dstnodata 0 -of GTiff -te %s %s %s %s -ts %d %d -r near -multi -q %s %s" % (format(minx, '.10f'), format(miny, '.10f'), format(maxx, '.10f'), format(maxy, '.10f'), tile_size, tile_size, src, tilepath)
             
             #print command
             os.system(command)
-            
-            count += 1
-            # process bar
-            if (count % step == 0):
-                print "[Normal]level %s current processed: %.2f%%" % (str(level), (count / float(totalBundles) * 100))
-		sys.stdout.flush()
                 
 
 def flatten_google_dir(out, level):
@@ -535,93 +524,96 @@ def copy_labels():
         shutil.copyfile(label_old_file_path, label_new_file_path)
 
 
-def tiler_overlay():
-    log(flog, 'tiler overlay into %s ...' % (config.overlay_tiles_dir))
+def create_utfgrids():
+    if not os.path.exists(config.overlay_tiles_dir):
+        os.mkdir(config.overlay_tiles_dir)
 
-    config_object = {
-        "name": 'DeepPlanet',
-        "map": config.data_root,
-        "fonts": ".",
-        "dest": config.overlay_tiles_dir,
-        "lod": config.lod_file,
-        "def": config.style_file,
-        "save_cloud": 0,
-        "levels": [int(config.tile_level)],
-        "types": [6],
-        "store_backend": "file",
-        "boundary": config.tile_extent,
-        "overwrite": 1,
-        "max_threads": 1,
-        "retina": 1,
-        "render_label": 0,
-        "expand": 0
-    }
-    with open(config.tiler_file, 'w') as outfile:
-        json.dump(config_object, outfile)
+    mercator = globalmaptiles.GlobalMercator()
+    # map
+    m = mapnik.Map(config.image_dim, config.image_dim)
 
-    # style specify
-    style_object = {
-        "background_color": [255, 255, 255],
-        "background_opacity": 1.0,
-        "data_sources": {
-            "ds": {
-                "source": "overlay",
-                "type": "shapefile"
-            }
-        },
-        "layers": {
-        }
-    }
+    # Since grids are `rendered` they need a style
+    s = mapnik.Style()
+    r = mapnik.Rule()
+    polygon_symbolizer = mapnik.PolygonSymbolizer(mapnik.Color('#f2eff9'))
+    r.symbols.append(polygon_symbolizer)
+    line_symbolizer = mapnik.LineSymbolizer(mapnik.Color('rgb(50%,50%,50%)'),0.1)
+    r.symbols.append(line_symbolizer)
+    s.rules.append(r)
+    m.append_style('My Style',s)
 
-    layer_list = []
+    # layers
+    large_num = 10000000000
+    minx = large_num
+    maxx = -large_num
+    miny = large_num
+    maxy = -large_num
+
     file_list = os.listdir(config.overlay_dir)
     for file in file_list:
         items = file.split('.')
         if items[-1] == 'shp':
-            layer_list.append(items[0])
-    print(layer_list)
+            shppath = os.path.join(config.overlay_dir, file)
+            ds = ogr.Open(shppath)
+            layer = ds.GetLayer(0)
+            bbox = layer.GetExtent()
 
-    for layer in layer_list:
-        layer_object = {
-            "data_source": "ds",
-	        "data_name": layer,
-	        "rules": [
-		        {
-		            "res_max": 10,
-		            "res_min": 0,
-					"utfgrid_fields": config.class_field,
-					"grid_size": 1,
-		            "symbol_type": "fill",
-		            "fill_color": [255, 0, 0]
-		        }
-	        ]
-        }
-        style_object['layers'][layer] = layer_object
-    
-    with open(config.style_file, 'w') as outfile:
-        json.dump(style_object, outfile)
+            if minx > bbox[0]:
+                minx = bbox[0]
+            if miny > bbox[2]:
+                miny = bbox[2]
+            if maxx < bbox[1]:
+                maxx = bbox[1]
+            if maxy < bbox[3]:
+                maxy = bbox[3]
+            
+            print('create layer', file)
+            mlayer = mapnik.Layer(str(file))
+            mlayer.datasource = mapnik.Shapefile(file=shppath)
+            mlayer.styles.append('My Style')
 
-    # lod object
-    lod_object = {
-        "originX": config.worldOriginalx,
-        "originY": config.worldOriginaly,
-        "minX": config.worldOriginalx,
-        "maxX": -config.worldOriginalx,
-        "minY": -config.worldOriginaly,
-        "maxY": config.worldOriginaly,
-        "tileSize": config.image_dim,
-        "zoomReses": config.zoomReses
-    }
-    with open(config.lod_file, 'w') as outfile:
-        json.dump(lod_object, outfile)
+            # check field
+            all_fields = mlayer.datasource.fields()
+            find_field = False
+            for fd in all_fields:
+                if fd == config.class_field:
+                    find_field = True
+            if not find_field:
+                print('not exist class field', config.class_field)
+                return
 
-    if not os.path.exists(config.overlay_tiles_dir):
-        os.mkdir(config.overlay_tiles_dir)
+            m.layers.append(mlayer)
 
-    # start the job
-    command = './bin/tiler %s' % (config.tiler_file)
-    print command
-    os.system(command)
+    print(minx, miny, maxx, maxy)
+
+    tz = int(config.tile_level)
+    print " * Processing Zoom Level %s" % tz
+
+    tminx, tminy = mercator.MetersToTile(minx, miny, tz)
+    tmaxx, tmaxy = mercator.MetersToTile(maxx, maxy, tz)
+    total_tiles = (tmaxx - tminx + 1) * (tmaxy - tminy + 1)
+    # progress bar
+    widgets = [Bar('>'), ' ', Percentage(), ' ', Timer(), ' ', ETA()]
+    pbar = ProgressBar(widgets=widgets, maxval=total_tiles).start()
+    count = 0
+    for ty in range(tminy, tmaxy+1):
+        for tx in range(tminx, tmaxx+1):
+            count = count + 1
+            pbar.update(count)
+
+            ymax = 1 << tz
+            invert_ty = ymax - ty - 1
+
+            tilefilename = os.path.join(config.overlay_tiles_dir, "%d_%d_%d.json" % (tz, tx, invert_ty))
+            tilebounds = mercator.TileBounds(tx, ty, tz)
+
+            box = mapnik.Box2d(*tilebounds)
+            m.zoom_to_box(box)
+            grid = mapnik.Grid(m.width, m.height)
+            mapnik.render_layer(m, grid, layer=0, fields=[str(config.class_field)])
+            utfgrid = grid.encode('utf', resolution=1)
+            with open(tilefilename, 'w') as file:
+                file.write(json.dumps(utfgrid))
 
 
 def decode_id(codepoint):
@@ -656,7 +648,11 @@ def proces_label_img(tile):
 
     # load grids
     with open(tile_file) as json_data:
-        grid = json.load(json_data)
+        try:
+            grid = json.load(json_data)
+        except Exception as identifier:
+            print identifier
+            return
     
     img = numpy.zeros((config.image_dim, config.image_dim))
     for row in range(0, config.image_dim):
@@ -691,13 +687,15 @@ def grid2image():
 
     tiles = os.listdir(color_dir)
 
-    # for tile in tiles:
-    #     print(tile)
-    #     proces_label_img(tile)
-
     # progress bar
     widgets = [Bar('>'), ' ', Percentage(), ' ', Timer(), ' ', ETA()]
     pbar = ProgressBar(widgets=widgets, maxval=len(tiles)).start()
+
+    # cnt = 0
+    # for tile in tiles:
+    #     proces_label_img(tile)
+    #     cnt = cnt + 1
+    #     pbar.update(cnt)
 
     nthreads = multiprocessing.cpu_count()
     pool = multiprocessing.Pool(processes=nthreads)
@@ -1109,7 +1107,7 @@ if __name__=='__main__':
     ######### vector labels ###########
     if not os.path.exists(config.labels_dir):
         if not os.path.exists(config.overlay_tiles_dir):
-            tiler_overlay()
+            create_utfgrids()
         else:
             log(flog, 'skip tiler_overlay progress ...')
         if not os.path.exists(config.valid_overlay_tiles_dir):
@@ -1124,7 +1122,7 @@ if __name__=='__main__':
         log(flog, 'skip tiler vector tiles, copy labels and grid2image progress ...')
 
     ######## split train test ##########
-    #split_train_test()
+    split_train_test()
 
     ######## deploy ####################
     if len(config.deploy) >= 1:

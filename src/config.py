@@ -119,17 +119,6 @@ class DeepPlanetConfig:
 		else:
 			print('data_name must specified!!!')
 			return False
-		
-		if 'tile_extent' in pobject:
-			# 训练样本范围
-			# for sanxia
-			#tile_extent = [11779924.71, 3315613.19, 12429394.15, 3728152.58]
-			# for zhanjiang
-			#tile_extent = [12272311.892742, 2403831.52580, 12304619.6025, 2436356.63936]
-			self.tile_extent = pobject['tile_extent']
-		else:
-			print('tile_extent must specified!')
-			return False
 
 		if 'deploy' in pobject:
 			# 需要发布的训练集（名称和数据目录一样，可以指定多个数据目录进行合并）
@@ -203,11 +192,6 @@ class DeepPlanetConfig:
 		# log文件
 		self.log_file = '%s/log.txt' % self.data_root
 
-		###################### 地图级别 #########################################
-		self.worldOriginalx = -20037508.342787
-		self.worldOriginaly = 20037508.342787
-		self.zoomReses = [156543.033928,78271.516964,39135.758482,19567.879241,9783.9396205,4891.96981025,2445.984905125,1222.9924525625,611.49622628125,305.748113140625,152.8740565703125,76.43702828515625,38.21851414257813,19.10925707128906,9.55462853564453,4.777314267822266,2.388657133911133,1.194328566955567,0.597164283477783,0.298582141738892,0.14929107086945,0.07464553543473]
-
 		###################### 和训练样本相关的变量 ###############################
 		# 训练网络
 		self.model_dir = 'models'
@@ -226,6 +210,7 @@ class DeepPlanetConfig:
 		self.test_net = '%s/segnet_test.prototxt' % self.model_dir
 		self.predict_net = '%s/segnet_predict.prototxt' % self.model_dir
 		self.inference_net_template = 'models/segnet_inference.prototxt'
+		self.deploy_net = '%s/deploy.prototxt' % self.model_dir
 
 		# 测试数据的输出目录
 		self.test_gt_dir = '%s/gt' % self.deploy_dir
@@ -278,9 +263,9 @@ class DeepPlanetConfig:
 		# because label_color directory is created by another program!!!
 		# If you change this, change config.json too!!!
 		# 标注切割后所在的目录（rgb）
-		self.overlay_tiles_dir = '%s/labels_color' % self.data_root
+		self.overlay_tiles_dir = '%s/labels_grid' % self.data_root
 		# 过滤无效标注后的目录（rgb）
-		self.valid_overlay_tiles_dir = '%s/valid_labels_color' % self.data_root
+		self.valid_overlay_tiles_dir = '%s/valid_labels_grid' % self.data_root
 		# rgb标注转换为灰度标注的目录
 		self.labels_dir = '%s/labels' % self.data_root
 
