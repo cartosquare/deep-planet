@@ -50,19 +50,6 @@ class DeepPlanetConfig:
 		else:
 			self.image_type = 'tif'
 
-		# 影像投影和nodata值
-		if 'src_projection' in pobject:
-			self.src_projection = pobject['src_projection']
-		else:
-			print('warning: no src projection set!')
-			return False
-
-		if 'src_nodata' in pobject:
-			self.src_nodata = pobject['src_nodata']
-		else:
-			print('warning: no src_nodata set! default to 0')
-			self.src_nodata = '0'
-
 		# 训练的波段
 		# rapideye false-color-compose bands: [5, 3, 2]
 		# GF false-color compose bands: [4, 3, 2]

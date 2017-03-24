@@ -50,7 +50,46 @@ def tiff_count(src_dir):
             tif_file = file_path
     return (count, tif_file)
 
-def reproj(src_dir, src_proj, src_nodata, dest_dir):
+def get_epsg(src_dir):
+    files = os.listdir(src_dir)
+    epsg_code = None
+    for file in files:
+        if is_tiff(file):
+            file_path = os.path.join(src_dir, file)
+            dataset = gdal.Open(file_path, gdal.GA_ReadOnly)
+
+            srs = osr.SpatialReference()
+            srs.ImportFromESRI([dataset.GetProjection()])
+
+            srs.AutoIdentifyEPSG()
+            if epsg_code is None:
+                epsg_code = srs.GetAuthorityCode(None)
+            else:
+                if epsg_code != srs.GetAuthorityCode(None):
+                    print('%s contains mulity SpatialReference' % src_dir)
+                    return None
+    return epsg_code
+
+
+def get_nodata(src_dir):
+    nodata = None
+    for file in files:
+        if is_tiff(file):
+            file_path = os.path.join(src_dir, file)
+            dataset = gdal.Open(file_path, gdal.GA_ReadOnly)
+            
+            band = dataset.GetRasterBand(1)
+            if nodata is None:
+                nodata = dataset.GetRasterBand(1)
+            else:
+                if nodata != band.GetNoDataValue():
+                    log(flog, 'nodata value must keep same in %s' % src_dir)
+                    # todo convert to keep same
+
+    return nodata
+
+
+def reproj(src_dir, src_proj, dest_dir):
     log(flog, 'projecting files from %s with projection %s and nodata value %s to %s ...' % (src_dir, src_proj, src_nodata, dest_dir))
     create_directory_if_not_exist(dest_dir)
 
@@ -63,9 +102,7 @@ def reproj(src_dir, src_proj, src_nodata, dest_dir):
 		    print 'unsupport file ', file
 		    continue
 
-        command = 'gdalwarp -s_srs %s -t_srs EPSG:3857 -r bilinear -srcnodata %s -dstnodata 0 %s %s' % (src_proj, src_nodata, file_path, projected_file_path)
-        print command
-
+        command = 'gdalwarp -s_srs %s -t_srs EPSG:3857 -r bilinear %s %s' % (src_proj, file_path, projected_file_path)
         os.system(command)
 
 
@@ -141,7 +178,6 @@ def tiler_tif(src, out, level, extent):
     if dataset is None:
         print('dataset is null', src)
         return 
-
 
     print 'Projection is ',dataset.GetProjection()
     geotransform = dataset.GetGeoTransform()
@@ -981,13 +1017,13 @@ if __name__=='__main__':
     generate_pages()
 
     # Step 1, Reprojection if needed 
-    if config.src_projection != 'EPSG:3857':
-        if config.src_nodata is None:
-            log(flog, 'src nodata must specify! program exist ...')
-            exit()
+    src_projection = get_epsg(config.src_tifs)
+    src_nodata = get_nodata(config.src_dir)
+    print('projection: %d, nodata: %s' % (src_projection, str(src_nodata))
 
+    if src_projection != 3857:
         if not os.path.exists(config.tifs_3857):
-            reproj(config.src_tifs, config.src_projection, config.src_nodata, config.tifs_3857)
+            reproj(config.src_tifs, src_projection, config.tifs_3857)
         else:
             log(flog, 'skip reprojtion progress ...')
         projected_dir = config.tifs_3857
