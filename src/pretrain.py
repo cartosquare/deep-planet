@@ -131,7 +131,7 @@ def reproj(src_dir, src_proj, dest_dir):
 		    #print 'unsupport file ', file
 		    continue
 
-        command = 'gdalwarp -s_srs EPSG:%s -t_srs EPSG:3857 -r bilinear %s %s' % (src_proj, file_path, projected_file_path)
+        command = '%s -s_srs EPSG:%s -t_srs EPSG:3857 -r bilinear %s %s' % (os.path.join(bundle_dir, 'gdalwarp'), src_proj, file_path, projected_file_path)
         print(command)
         return execute_system_command(command)
 
@@ -154,16 +154,16 @@ def fetch_bands(src_dir, dest_dir, band_list, encode_type, image_type):
             band_str = band_str + (' -b %s' % band)
 
         if encode_type == 'analyze' and image_type == 'tif':
-            command = 'gdal_translate -ot UInt16 %s %s %s' % (file_path, fetched_file_path, band_str)
+            command = '%s -ot UInt16 %s %s %s' % (os.path.join(bundle_dir, 'gdal_translate'), file_path, fetched_file_path, band_str)
         else:
             # visualize or analyze but using png
-            command = 'gdal_translate -scale -ot Byte -co COMPRESS=JPEG -co JPEG_QUALITY=100 %s %s %s' % (file_path, fetched_file_path, band_str)
+            command = '%s -scale -ot Byte -co COMPRESS=JPEG -co JPEG_QUALITY=100 %s %s %s' % (os.path.join(bundle_dir, 'gdal_translate'), file_path, fetched_file_path, band_str)
         print command
         return execute_system_command(command)
 
 def execute_system_command(command):
     try:
-        retcode = subprocess.call(command, shell=True)
+        retcode = subprocess.call(command, env=env, shell=True)
         if retcode < 0:
             print("Child was terminated by signal", -retcode)
             return False
@@ -183,7 +183,7 @@ def build_overview(work_dir):
 			    print 'unsupport file ', file
 			    continue
 
-		    command = "gdaladdo -r gauss -ro %s 2 4 8 16" % (os.path.join(parent, file))
+		    command = "%s -r gauss -ro %s 2 4 8 16" % (os.path.join(bundle_dir, 'gdaladdo'), os.path.join(parent, file))
 		    print command
 		    return execute_system_command(command)
 
@@ -191,7 +191,7 @@ def build_overview(work_dir):
 def build_file_overview(file):
     log(flog, 'building overview for %s' % (file))
 
-    command = "gdaladdo -r gauss -ro %s 2 4 8 16" % (file)
+    command = "%s -r gauss -ro %s 2 4 8 16" % (os.path.join(bundle_dir, 'gdaladdo'), file)
     print command
     return execute_system_command(command)
 
@@ -199,7 +199,7 @@ def build_file_overview(file):
 def merge_as_virtual_dataset(src_dir, merged_file):
     log(flog, 'merging virtual dataset from files under %s to %s ...' % (src_dir, merged_file))
 
-    command = 'gdalbuildvrt %s %s/*.tif' % (merged_file, src_dir)
+    command = '%s %s %s/*.tif' % (os.path.join(bundle_dir, 'gdalbuildvrt'), merged_file, src_dir)
     print command
     return execute_system_command(command)
 
@@ -263,7 +263,7 @@ def tiler_tif(src, out):
                 maxy = maxy + mercator.Resolution[tz] * config.overlap
                 tile_size = config.image_dim + config.overlap
 
-            command = "gdalwarp -dstnodata %s -of GTiff -te %s %s %s %s -ts %d %d -r near -multi -q %s %s" % (str(dst_nodata), format(minx, '.10f'), format(miny, '.10f'), format(maxx, '.10f'), format(maxy, '.10f'), tile_size, tile_size, src, tilepath)
+            command = "%s -dstnodata %s -of GTiff -te %s %s %s %s -ts %d %d -r near -multi -q %s %s" % (os.path.join(bundle_dir, 'gdalwarp'), str(dst_nodata), format(minx, '.10f'), format(miny, '.10f'), format(maxx, '.10f'), format(maxy, '.10f'), tile_size, tile_size, src, tilepath)
             
             #print command
             status  = execute_system_command(command)
@@ -1045,6 +1045,16 @@ if __name__=='__main__':
     # Open log file
     flog = open(config.log_file, 'w')
     log(flog, 'tiler raster begins, this may take a while, go to drink a cup of coffee ...')
+
+    # for pyinstaller
+    env = dict(os.environ)  # make a copy of the environment
+    if getattr(sys, 'frozen', False):
+        # we are running in a bundle
+        bundle_dir = sys._MEIPASS
+        env['GDAL_DATA'] = os.path.join(sys._MEIPASS, 'share/gdal/1.11/')
+    else:
+        # we are running in a normal Python environment
+        bundle_dir = os.path.dirname(os.path.abspath(__file__))
 
     # get information from source tifs
     ## get projection from source tifs
