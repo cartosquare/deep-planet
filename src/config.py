@@ -57,8 +57,8 @@ class DeepPlanetConfig:
 		if 'analyze_bands' in pobject:
 			self.analyze_bands = pobject['analyze_bands']
 		else:
-			print('warning: no analyze_bands set! default to [1 2 3]')
-			self.analyze_bands = [1, 2, 3]
+			print('warning: no analyze_bands set! default all bands')
+			self.analyze_bands = []
 
 		# 可视化的波段
 		if 'visualize_bands' in pobject:
