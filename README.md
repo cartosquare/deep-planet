@@ -4,10 +4,75 @@
 * 支持将影像转换为图片训练（消除不同传感器DN值范围不同影响）
 
 ## Dependencies
-* gdal
+* caffe-segnet
+```
+sudo apt-get install libprotobuf-dev libleveldb-dev libsnappy-dev libopencv-dev libhdf5-serial-dev protobuf-compiler
+sudo apt-get install --no-install-recommends libboost-all-dev
+sudo apt-get install libatlas-base-dev
+sudo apt-get install python-dev
+sudo apt-get install libgflags-dev libgoogle-glog-dev liblmdb-dev
+sudo apt-get install python-numpy
+sudo apt-get install libgdal-dev gdal-bin python-gdal
+```
+
+### build
+```
+cp Makefile.config.example Makefile.config
+make -j 8
+make pycaffe
+```
+
+### common problems
+#### fix compile flag
+```
+-NVCCFLAGS += -ccbin=$(CXX) -Xcompiler -fPIC $(COMMON_FLAGS)
+
++NVCCFLAGS += -D_FORCE_INLINES -ccbin=$(CXX) -Xcompiler -fPIC $(COMMON_FLAGS)
+```
+
+#### can't find hdf5.h
+
+modify INCLUDE_DIRS in Makefile.config
+```
+INCLUDE_DIRS := $(PYTHON_INCLUDE) /usr/local/include /usr/include/hdf5/serial
+```
+
+create symlinks as instructed here
+
+```
+cd /usr/lib/x86_64-linux-gnu
+sudo ln -s libhdf5_serial.so.8.0.2 libhdf5.so
+sudo ln -s libhdf5_serial_hl.so.8.0.2 libhdf5_hl.so
+```
+
+### can't find gdal_priv.h
+modify INCLUDE_DIRS in Makefile.config
+```
+INCLUDE_DIRS := $(PYTHON_INCLUDE) /usr/local/include /usr/include/hdf5/serial /usr/include/gdal
+```
+
+
+### other dependencies
+* pip
+```
+sudo apt-get install python-pip
+```
+
 * skimage
+```
+pip install -U scikit-image
+```
+
 * progressbar
+```
+pip install progressbar
+```
+
 * mapnik
+```
+sudo apt-get install python-mapnik
+```
+
 
 ## Usage
 
@@ -34,3 +99,11 @@ Global acc = 0.781321, Class average acc = 0.913746, Mean Int over Union = 0.748
 test:
 predict:
 evaluate: 184 images/min
+
+## bundle
+* pyinstaller
+```
+pip install pyinstaller
+```
+* [upx](https://github.com/upx/upx/releases/tag/v3.93)
+* Crypto

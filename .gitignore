@@ -4,5 +4,7 @@ dist/
 training_set/
 config/
 projects/
+build/
+bin/
 *.pyc
 .*
