@@ -1,4 +1,10 @@
 # -*- coding: utf-8 -*-
+import gdal
+from gdalconst import *
+import osr
+import ogr
+gdal.UseExceptions()
+import mapnik
 
 import os
 import shutil
@@ -8,19 +14,13 @@ import numpy
 import random
 import datetime
 from PIL import Image
-from osgeo import gdal
-# this allows GDAL to throw Python Exceptions
-gdal.UseExceptions()
 import multiprocessing 
 from progressbar import *
 from skimage import io
 import json
 import globalmaptiles
-import mapnik
-import ogr
+
 from config import DeepPlanetConfig
-
-
 ################################## Functions ########################
 def log(file_handle, message):
     current_time = datetime.datetime.now()
@@ -51,13 +51,15 @@ def tiff_count(src_dir):
     return (count, tif_file)
 
 def get_epsg(src_dir):
+    log(flog, 'fetch epsg code from %s'% src_dir)
+
     files = os.listdir(src_dir)
     epsg_code = None
     for file in files:
         if is_tiff(file):
             file_path = os.path.join(src_dir, file)
             try:
-                dataset = gdal.Open(file_path, gdal.GA_ReadOnly)
+                dataset = gdal.Open(str(file_path), GA_ReadOnly)
 
                 srs = osr.SpatialReference()
                 srs.ImportFromESRI([dataset.GetProjection()])
@@ -69,6 +71,7 @@ def get_epsg(src_dir):
             
             if epsg_code is None:
                 epsg_code = srs.GetAuthorityCode(None)
+                log(flog, 'find epsg code %s' % str(epsg_code))
             else:
                 if epsg_code != srs.GetAuthorityCode(None):
                     log(flog, '%s contains mulity SpatialReference' % src_dir)
@@ -77,18 +80,21 @@ def get_epsg(src_dir):
 
 
 def get_nodata(src_dir):
+    log(flog, 'fetch nodata value from %s'% src_dir)
+    files = os.listdir(src_dir)
     nodata = None
     for file in files:
         if is_tiff(file):
             file_path = os.path.join(src_dir, file)
-            dataset = gdal.Open(file_path, gdal.GA_ReadOnly)
+            dataset = gdal.Open(str(file_path), gdal.GA_ReadOnly)
             
             band = dataset.GetRasterBand(1)
             if nodata is None:
-                nodata = dataset.GetRasterBand(1)
+                nodata = band.GetNoDataValue()
+                log(flog, 'find nodata %s' % str(nodata))
             else:
                 if nodata != band.GetNoDataValue():
-                    log(flog, 'nodata value must keep same in %s' % src_dir)
+                    log(flog, 'nodata value must keep same in %s, old %s, new %s' % (src_dir, str(nodata), str(band.GetNoDataValue())))
                     # todo convert to keep same
 
     return nodata
@@ -104,10 +110,11 @@ def reproj(src_dir, src_proj, dest_dir):
         projected_file_path = os.path.join(dest_dir, file)
 
         if not is_tiff(file):
-		    print 'unsupport file ', file
+		    #print 'unsupport file ', file
 		    continue
 
-        command = 'gdalwarp -s_srs %s -t_srs EPSG:3857 -r bilinear %s %s' % (src_proj, file_path, projected_file_path)
+        command = 'gdalwarp -s_srs EPSG:%s -t_srs EPSG:3857 -r bilinear %s %s' % (src_proj, file_path, projected_file_path)
+        print(command)
         os.system(command)
 
 
@@ -173,18 +180,12 @@ def merge(src_dir, merged_file):
     print command
     os.system(command)
 
-def tiler_tif(src, out, level, extent): 
-    log(flog, 'tilering level %d, extent %s, from %s to %s ...' % (level, str(extent), src, out))
-    create_directory_if_not_exist(out)
-    
-    mercator = globalmaptiles.GlobalMercator()
-    # tile extent
-    dataset = gdal.Open(src, gdal.GA_ReadOnly)
+def get_raster_extent(src):
+    dataset = gdal.Open(str(src), GA_ReadOnly)
     if dataset is None:
         print('dataset is null', src)
-        return 
+        return None
 
-    print 'Projection is ',dataset.GetProjection()
     geotransform = dataset.GetGeoTransform()
     if not geotransform is None:
         map_minx = geotransform[0]
@@ -193,13 +194,19 @@ def tiler_tif(src, out, level, extent):
         map_miny = map_maxy + geotransform[5] * dataset.RasterYSize
     else:
         print('no geotransform find', src)
-        return
+        return None
+    log(flog, 'raster extent %f, %f, %f, %f' % (map_minx, map_miny, map_maxx, map_maxy))
+    return (map_minx, map_miny, map_maxx, map_maxy)
 
-    print map_minx, map_miny, map_maxx, map_maxy
+
+def tiler_tif(src, out): 
+    log(flog, 'tilering level %s, from %s to %s ...' % (config.tile_level, src, out))
+    create_directory_if_not_exist(out)
     
+    mercator = globalmaptiles.GlobalMercator()
     tz = int(config.tile_level)
-    tminx, tminy = mercator.MetersToTile(map_minx, map_miny, tz)
-    tmaxx, tmaxy = mercator.MetersToTile(map_maxx, map_maxy, tz)
+    tminx, tminy = mercator.MetersToTile(raster_extent[0], raster_extent[1], tz)
+    tmaxx, tmaxy = mercator.MetersToTile(raster_extent[2], raster_extent[3], tz)
 
     total_tiles = (tmaxx - tminx + 1) * (tmaxy - tminy + 1)
     # progress bar
@@ -300,7 +307,7 @@ def proces_tif(tif_file):
         return
 
     try:
-        src_ds = gdal.Open(tif_file)
+        src_ds = gdal.Open(str(tif_file))
     except RuntimeError, e:
         os.unlink(tif_file)
         return
@@ -348,7 +355,7 @@ def proces_predict_tif(tif_file):
         return
 
     try:
-        src_ds = gdal.Open(tif_file)
+        src_ds = gdal.Open(str(tif_file))
     except RuntimeError, e:
         os.unlink(tif_file)
         return
@@ -893,12 +900,11 @@ def calculate_weights():
 def deploy():
     log(flog, 'deploy dataset %s to %s ...' % (str(config.deploy), config.deploy_dir))
 
-    if not os.path.exists(config.deploy_dir):
+    if os.path.exists(config.deploy_dir):
+        shutil.rmtree(config.deploy_dir)
         os.mkdir(config.deploy_dir) 
 
     training_dir = config.deploy_dir
-    if not os.path.exists(training_dir):
-        os.mkdir(training_dir) 
 
     train_txt = '%s/train.txt' % training_dir
     test_txt = '%s/test.txt' % training_dir
@@ -960,7 +966,7 @@ def need_build_overview(dir_name):
     return True
 
 
-def generate_pages():
+def generate_pages(type):
     page_template = '''
     <!DOCTYPE html>
     <html>
@@ -985,10 +991,11 @@ def generate_pages():
     </body>
     </html>
     '''
-    cx = (config.tile_extent[0] + config.tile_extent[2]) / 2.0
-    cy = (config.tile_extent[1] + config.tile_extent[3]) / 2.0
+    cx = (raster_extent[0] + raster_extent[2]) / 2.0
+    cy = (raster_extent[1] + raster_extent[3]) / 2.0
     
-    if config.process_visualize:
+    if type == 'visualize':
+        log(flog, 'generate tile viewer page %s serving %s' % (config.visualize_page, config.visualize_tiles_dir))
         visualize_str = page_template.format(title=config.data_name, x=cx, y=cy, 
         level=config.tile_level, osm_url='http://a.tile.osm.org/{z}/{x}/{y}.png',
         layer_url='/%s/{z}_{x}_{y}.png' % (config.visualize_tiles_dir)
@@ -996,10 +1003,12 @@ def generate_pages():
         with open(config.visualize_page, 'w') as f:
             f.write(visualize_str)
 
-    if config.process_analyze and config.mode == 'train':
+    if type == 'analyze' and config.mode == 'train':
+        log(flog, 'generate tile viewer page %s serving %s' % (config.label_page, config.visualize_tiles_dir))
+
         label_str = page_template.format(title=config.data_name, x=cx, y=cy, 
         level=config.tile_level, osm_url='http://a.tile.osm.org/{z}/{x}/{y}.png',
-        layer_url='/%s/{z}_{x}_{y}.png' % (config.valid_overlay_tiles_dir)
+        layer_url='/%s/{z}_{x}_{y}.png' % (config.labels_dir)
         )
         with open(config.label_page, 'w') as f:
             f.write(label_str)
@@ -1021,9 +1030,6 @@ if __name__=='__main__':
     flog = open(config.log_file, 'w')
     log(flog, 'tiler raster begins, this may take a while, go to drink a cup of coffee ...')
 
-    # generate html pages to visualize tiles
-    generate_pages()
-
     # Reprojection if needed 
     ## get projection from source tifs
     src_projection = get_epsg(config.src_tifs)
@@ -1032,14 +1038,14 @@ if __name__=='__main__':
         exit()
 
     ## get nodata value from source tifs
-    src_nodata = get_nodata(config.src_dir)
+    src_nodata = get_nodata(config.src_tifs)
     if src_nodata is None:
         dst_nodata = 0
     else:
         dst_nodata = src_nodata
-    print('src projection: %d, src nodata: %s, dst nodata: %s' % (src_projection, str(src_nodata), str(dst_nodata))
+    print('src projection: %s, src nodata: %s, dst nodata: %s' % (src_projection, str(src_nodata), str(dst_nodata)))
 
-    if src_projection != 3857:
+    if src_projection != '3857':
         if not os.path.exists(config.tifs_3857):
             reproj(config.src_tifs, src_projection, config.tifs_3857)
         else:
@@ -1050,9 +1056,9 @@ if __name__=='__main__':
         projected_dir = config.src_tifs
     
     if config.process_analyze and not os.path.exists(config.analyze_tiles_dir):
-        # Step 2, fetch bands for analyze and visualize
+        # Fetch bands for analyze
         if len(config.analyze_bands) == 0:
-            # use all bands for analyze
+            ## use all bands for analyze
             log(flog, 'use all bands for analyze')
             analyze_dir = projected_dir
         else:
@@ -1062,14 +1068,14 @@ if __name__=='__main__':
                 log(flog, 'skip fetch bands progress ...')
             analyze_dir = config.analyze_tifs_dir
         
-        # Step 3, build overview for analyze and visualize datas
+        # Build overview for analyze datas
         if need_build_overview(analyze_dir):
             build_overview(analyze_dir)
         else:
             log(flog, 'skip build overview progress ...')
 
-        # Step 4, merge tifs
-        # for training, as virtual dataset is efficient
+        # Merge tifs
+        ## for training, as virtual dataset is efficient
         tif_count, tif_file = tiff_count(analyze_dir)
         print tif_count, tif_file
         if tif_count > 1:
@@ -1085,15 +1091,24 @@ if __name__=='__main__':
             config.merged_analyze_file = tif_file
             log(flog, 'no need to merge only one file: %s' % (config.merged_analyze_file))
         
-        # Step 5, cut into tiles
-        # for analyze tiles
+        # Cut into tiles
+        ## get extent
+        raster_extent = get_raster_extent(config.merged_analyze_file)
+        if raster_extent is None:
+            log(flog, 'get raster extent fail, exist ...')
+            exit()
+
+        ## generate html pages to visualize tiles
+        generate_pages('analyze')
+
+        ## tiler
         if not os.path.exists(config.analyze_tiles_dir):
             if config.image_type == 'tif':
-                tiler_tif(config.merged_analyze_file, config.analyze_tiles_dir, int(config.tile_level), config.tile_extent)
+                tiler_tif(config.merged_analyze_file, config.analyze_tiles_dir)
             else:
                 tiler_png(config.merged_analyze_file, config.analyze_tiles_dir, str(config.tile_level))
         
-            # Step 6, rm invalid training tiles
+            # Delete invalid training tiles
             rm_invalid_tiles(config.analyze_tiles_dir, config.image_type, config.mode)
         else:
             log(flog, 'skip tiler tiles and remove invalid tiles progress ...')
@@ -1112,13 +1127,13 @@ if __name__=='__main__':
             else:
                 log(flog, 'skip fetch bands progress ...')
             visualize_dir = config.visualize_tifs_dir
-        # Step 3
+        # Build overview if needed
         if need_build_overview(visualize_dir):
             build_overview(visualize_dir)
         else:
             log(flog, 'skip build overview progress ...')
         
-        # Step 4 for visualize, better do really merge
+        # For visualize, better do really merge
         tif_count, tif_file = tiff_count(visualize_dir)
         if tif_count > 1:
             if not os.path.exists(config.merged_visualize_file):
@@ -1132,7 +1147,16 @@ if __name__=='__main__':
         else:
             config.merged_visualize_file = tif_file
         
-        # Step 5 for visualize tiles
+        # Tiler visualize tiles
+        ## get extent
+        raster_extent = get_raster_extent(config.merged_visualize_file)
+        if raster_extent is None:
+            log(flog, 'get raster extent fail, exist ...')
+            exit()
+
+        ## generate html pages to visualize tiles
+        generate_pages('visualize')
+
         if not os.path.exists(config.visualize_tiles_dir):
             tiler_png(config.merged_visualize_file, config.visualize_tiles_dir, str(config.visualize_level))
         else:
