@@ -315,7 +315,7 @@ def tiler_png(src, out, level):
         for i in range(int(level_arr[0]), int(level_arr[1]) + 1):
             flatten_google_dir(out, i)
     return True
-    
+
 
 def proces_analyze_img(image_file):
     if is_png(image_file):
@@ -1030,14 +1030,14 @@ if __name__=='__main__':
     # Parse command line options
     if len(sys.argv) < 2:
         print('need config file!!!\n')
-        exit()
+        sys.exit()
     
     config_cmd = parseOptions(sys.argv[1])
     # Global configure object
     config = DeepPlanetConfig()
     if not config.Initialize(config_cmd):
         print('initialize fail! exist...')
-        exit()
+        sys.exit()
 
     # Open log file
     flog = open(config.log_file, 'w')
@@ -1048,7 +1048,7 @@ if __name__=='__main__':
     src_projection = get_epsg(config.src_tifs)
     if src_projection is None:
         log(flog, 'source tifs has no projection find! exist ...')
-        exit()
+        sys.exit()
 
     ## get nodata value from source tifs
     src_nodata = get_nodata(config.src_tifs)
@@ -1066,7 +1066,7 @@ if __name__=='__main__':
         if not os.path.exists(config.tifs_3857):
             if not reproj(config.src_tifs, src_projection, config.tifs_3857):
                 log(flog, 'reprojection fail, exit ...')
-                exit()
+                sys.exit()
         else:
             log(flog, 'skip reprojtion progress ...')
         projected_dir = config.tifs_3857
@@ -1085,13 +1085,13 @@ if __name__=='__main__':
         for bd in config.analyze_bands:
             if bd > bands:
                 print('band out of range! %d exceed %d' % (bd, bands))
-                exit()
+                sys.exit()
 
         # fetch bands and do necessary datatype convation
         if not os.path.exists(config.analyze_tifs_dir):
             if not fetch_bands(projected_dir, config.analyze_tifs_dir, config.analyze_bands, 'analyze', config.image_type):
                 log(flog, 'fetch band fail, exit ...')
-                exit()
+                sys.exit()
         else:
             log(flog, 'skip fetch bands progress ...')
         analyze_dir = config.analyze_tifs_dir
@@ -1100,7 +1100,7 @@ if __name__=='__main__':
         if need_build_overview(analyze_dir):
             if not build_overview(analyze_dir):
                 log(flog, 'build overview fail, exit ...')
-                exit()
+                sys.exit()
         else:
             log(flog, 'skip build overview progress ...')
 
@@ -1113,14 +1113,14 @@ if __name__=='__main__':
                 if config.virtual_dataset:
                     if not merge_as_virtual_dataset(analyze_dir, config.merged_analyze_file):
                         log(flog, 'merge virtual dataset fail, exit ...')
-                        exit()
+                        sys.exit()
                 else:
                     if not merge(analyze_dir, config.merged_analyze_file):
                         log(flog, 'merge fail, exit ...')
-                        exit()
+                        sys.exit()
                     if not build_file_overview(config.merged_analyze_file):
                         log(flog, 'build file overview fail, exit ...')
-                        exit()
+                        sys.exit()
             else:
                 log(flog, 'skip merge and build overview progress ...')
         else:
@@ -1132,7 +1132,7 @@ if __name__=='__main__':
         raster_extent = get_raster_extent(config.merged_analyze_file)
         if raster_extent is None:
             log(flog, 'get raster extent fail, exist ...')
-            exit()
+            sys.exit()
 
         ## generate html pages to visualize tiles
         generate_pages('analyze')
@@ -1142,11 +1142,11 @@ if __name__=='__main__':
             if config.image_type == 'tif':
                 if not tiler_tif(config.merged_analyze_file, config.analyze_tiles_dir):
                     log(flog, 'tiler tif fail, exit ...')
-                    exit()
+                    sys.exit()
             else:
                 if not tiler_png(config.merged_analyze_file, config.analyze_tiles_dir, str(config.tile_level)):
                     log(flog, 'tiler png fail, exit ...')
-                    exit()
+                    sys.exit()
         
             # Delete invalid training tiles
             rm_invalid_tiles(config.analyze_tiles_dir, config.image_type, config.mode)
@@ -1161,18 +1161,18 @@ if __name__=='__main__':
             # use first 3 bands for visualize
             if bands < 3:
                 print('not enough bands to visualize')
-                exit()
+                sys.exit()
             config.visualize_bands = [1, 2, 3]
         # check band validation
         for bd in config.visualize_bands:
             if bd > bands:
                 print('band out of range! %d exceed %d' % (bd, bands))
-                exit()
+                sys.exit()
         # fetch bands and do necessary datatype convertation
         if not os.path.exists(config.visualize_tifs_dir):
             if not fetch_bands(projected_dir, config.visualize_tifs_dir, config.visualize_bands, 'visualize', config.image_type):
                 log(flog, 'fetch bands fail, exit ...')
-                exit()
+                sys.exit()
         else:
             log(flog, 'skip fetch bands progress ...')
         visualize_dir = config.visualize_tifs_dir
@@ -1181,7 +1181,7 @@ if __name__=='__main__':
         if need_build_overview(visualize_dir):
             if not build_overview(visualize_dir):
                 log(flog, 'build overview fail, exit ...')
-                exit()
+                sys.exit()
         else:
             log(flog, 'skip build overview progress ...')
         
@@ -1192,14 +1192,14 @@ if __name__=='__main__':
                 if config.virtual_dataset:
                     if not merge_as_virtual_dataset(visualize_dir, config.merged_visualize_file):
                         log(flog, 'merge virtual dataset fail, exit ...')
-                        exit()
+                        sys.exit()
                 else:
                     if not merge(visualize_dir, config.merged_visualize_file):
                         log(flog, 'merge fail, exit ...')
-                        exit()
+                        sys.exit()
                     if not build_file_overview(config.merged_visualize_file):
                         log(flog, 'build file overview fail, exit ...')
-                        exit()
+                        sys.exit()
             else:
                 log(flog, 'skip merge and build overview progress ...')
         else:
@@ -1210,7 +1210,7 @@ if __name__=='__main__':
         raster_extent = get_raster_extent(config.merged_visualize_file)
         if raster_extent is None:
             log(flog, 'get raster extent fail, exist ...')
-            exit()
+            sys.exit()
 
         ## generate html pages to visualize tiles
         generate_pages('visualize')
@@ -1218,7 +1218,7 @@ if __name__=='__main__':
         if not os.path.exists(config.visualize_tiles_dir):
             if not tiler_png(config.merged_visualize_file, config.visualize_tiles_dir, str(config.visualize_level)):
                 log(flog, 'tiler png fail, exit ...')
-                exit()
+                sys.exit()
         else:
             log(flog, 'skip tiler visualize tiles progress ...')
 
@@ -1234,7 +1234,7 @@ if __name__=='__main__':
 
         shutil.copy(config.test_txt, '%s/predict.txt' % config.deploy_dir)
         log(flog, 'finished!')
-        exit()
+        sys.exit()
 
     ######### vector labels ###########
     if not os.path.exists(config.labels_dir):
