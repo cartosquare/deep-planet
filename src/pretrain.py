@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
-import gdal
-from gdalconst import *
-import osr
-import ogr
+from osgeo import gdal
+from osgeo import osr
+from osgeo import ogr
 gdal.UseExceptions()
+from gdal2tiles import GDAL2Tiles
+import gdal_merge
 import mapnik
 
 import os
@@ -60,7 +61,7 @@ def get_epsg(src_dir):
         if is_tiff(file):
             file_path = os.path.join(src_dir, file)
             try:
-                dataset = gdal.Open(str(file_path), GA_ReadOnly)
+                dataset = gdal.Open(str(file_path), gdal.GA_ReadOnly)
 
                 srs = osr.SpatialReference()
                 srs.ImportFromESRI([dataset.GetProjection()])
@@ -207,10 +208,11 @@ def merge(src_dir, merged_file):
 
     command = 'gdal_merge.py -o %s -n 0 -a_nodata 0 %s/*.tif' % (merged_file, src_dir)
     print command
-    return execute_system_command(command)
+    gdal_merge.main(command.split())
+    return True
 
 def get_raster_extent(src):
-    dataset = gdal.Open(str(src), GA_ReadOnly)
+    dataset = gdal.Open(str(src), gdal.GA_ReadOnly)
     if dataset is None:
         print('dataset is null', src)
         return None
@@ -301,12 +303,13 @@ def tiler_png(src, out, level):
     log(flog, 'tilering png level %s, from %s to %s ...' % (str(level), src, out))
     create_directory_if_not_exist(out)
     if src_nodata is None:
-        command = "gdal2tiles.py -s epsg:3857 -z '%s' %s %s" % (level, src, out)
+        command = "gdal2tiles.py -s epsg:3857 -z %s %s %s" % (level, src, out)
     else:
-        command = "gdal2tiles.py -s epsg:3857 -a %s -z '%s' %s %s" % (str(src_nodata), level, src, out)
+        command = "gdal2tiles.py -s epsg:3857 -a %s -z %s %s %s" % (str(src_nodata), level, src, out)
     print command
-    if not execute_system_command(command):
-        return False
+    argv = gdal.GeneralCmdLineProcessor(command.split())
+    gdal2tiles = GDAL2Tiles(argv[1:])
+    gdal2tiles.process()
 
     level_arr = level.split('-')
     if len(level_arr) == 1:
