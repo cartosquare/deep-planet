@@ -19,13 +19,13 @@ if __name__ == '__main__':
     # Parse command line options
     if len(sys.argv) < 2:
         print('need config file!!!\n')
-        exit()
+        exist()
 
     config_cmd = parseOptions(sys.argv[1])
     config = DeepPlanetConfig()
     if not config.Initialize(config_cmd):
         print('initialize fail! exist...')
-        exit()
+        exist()
 
     if os.path.exists(config.deploy_dir):
         shutil.rmtree(config.deploy_dir)
