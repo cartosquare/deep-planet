@@ -99,6 +99,22 @@ def get_nodata(src_dir):
 
     return nodata
 
+def get_bands(src_dir):
+    log(flog, 'fetch band information from %s'% src_dir)
+    files = os.listdir(src_dir)
+    band_num = None
+    for file in files:
+        if is_tiff(file):
+            file_path = os.path.join(src_dir, file)
+            dataset = gdal.Open(str(file_path), gdal.GA_ReadOnly)
+            if band_num is None:
+                band_num = dataset.RasterCount
+                log(flog, 'find #bands %s' % str(band_num))
+            else:
+                if band_num != dataset.RasterCount:
+                    log(flog, '#bands must keep same in %s, old %d, new %d' % (src_dir, band_num, dataset.RasterCount))
+                    return None
+    return band_num
 
 def reproj(src_dir, src_proj, dest_dir):
     log(flog, 'projecting files from %s with projection %s to %s ...' % (src_dir, src_proj, dest_dir))
@@ -825,7 +841,7 @@ def calculate_weights():
 
     images = []
     for ele in config.deploy:
-        img_dir = 'training_set/%s/%s' % (ele, label_dir_name)
+        img_dir = '%s/%s/%s' % (config.project_dir, ele, label_dir_name)
         imgs = os.listdir(img_dir)
 
         for i in range(len(imgs)):
@@ -900,8 +916,8 @@ def calculate_weights():
 def deploy():
     log(flog, 'deploy dataset %s to %s ...' % (str(config.deploy), config.deploy_dir))
 
-    if os.path.exists(config.deploy_dir):
-        shutil.rmtree(config.deploy_dir)
+    if not os.path.exists(config.deploy_dir):
+        #shutil.rmtree(config.deploy_dir)
         os.mkdir(config.deploy_dir) 
 
     training_dir = config.deploy_dir
@@ -914,36 +930,14 @@ def deploy():
 
     for ele in config.deploy:
         print 'process data set ', ele
-
-        # data_dir = '%s/training_set/%s' % (config.deploy_dir, ele)
-        # if not os.path.exists(data_dir):
-        #     os.mkdir(data_dir)
-
-        # # train dir
-        # items = config.analyze_tiles_dir.split('/')
-        # analyze_tiles_dir_name = items[len(items) - 1]
-
-        # train_dir = 'training_set/%s/%s' % (ele, analyze_tiles_dir_name)
-        # new_train_dir = '%s/%s' % (data_dir, analyze_tiles_dir_name)
-
-        # shutil.copytree(train_dir, new_train_dir)
-
-        # # label dir 
-        # items = config.labels_dir.split('/')
-        # label_dir_name = items[len(items) - 1]
-        # label_dir = 'training_set/%s/%s' % (ele, label_dir_name)
-        # new_label_dir = '%s/%s' % (data_dir, label_dir_name)
-
-        # shutil.copytree(label_dir, new_label_dir)
-
         # train file
-        train_file = 'training_set/%s/train.txt' % (ele)
+        train_file = '%s/%s/train.txt' % (config.project_dir, ele)
         with open(train_file, 'r') as f:
             for line in f:
                 ftrain.write(line)
     
         # test file
-        test_file = 'training_set/%s/test.txt' % (ele)
+        test_file = '%s/%s/test.txt' % (config.project_dir, ele)
         with open(test_file, 'r') as f:
             for line in f:
                 ftest.write(line)
@@ -1030,7 +1024,7 @@ if __name__=='__main__':
     flog = open(config.log_file, 'w')
     log(flog, 'tiler raster begins, this may take a while, go to drink a cup of coffee ...')
 
-    # Reprojection if needed 
+    # get information from source tifs
     ## get projection from source tifs
     src_projection = get_epsg(config.src_tifs)
     if src_projection is None:
@@ -1043,8 +1037,12 @@ if __name__=='__main__':
         dst_nodata = 0
     else:
         dst_nodata = src_nodata
-    print('src projection: %s, src nodata: %s, dst nodata: %s' % (src_projection, str(src_nodata), str(dst_nodata)))
+    
+    ## get bands info
+    bands = get_bands(config.src_tifs)
+    print('src projection: %s, src nodata: %s, dst nodata: %s, #bands: %d' % (src_projection, str(src_nodata), str(dst_nodata), bands))
 
+    # Reprojection if needed 
     if src_projection != '3857':
         if not os.path.exists(config.tifs_3857):
             reproj(config.src_tifs, src_projection, config.tifs_3857)
@@ -1060,13 +1058,20 @@ if __name__=='__main__':
         if len(config.analyze_bands) == 0:
             ## use all bands for analyze
             log(flog, 'use all bands for analyze')
-            analyze_dir = projected_dir
+            for i in range(0, bands):
+                config.analyze_bands.append(i + 1)
+        # check band validation
+        for bd in config.analyze_bands:
+            if bd > bands:
+                print('band out of range! %d exceed %d' % (bd, bands))
+                exit()
+
+        # fetch bands and do necessary datatype convation
+        if not os.path.exists(config.analyze_tifs_dir):
+            fetch_bands(projected_dir, config.analyze_tifs_dir, config.analyze_bands, 'analyze', config.image_type)
         else:
-            if not os.path.exists(config.analyze_tifs_dir):
-                fetch_bands(projected_dir, config.analyze_tifs_dir, config.analyze_bands, 'analyze', config.image_type)
-            else:
-                log(flog, 'skip fetch bands progress ...')
-            analyze_dir = config.analyze_tifs_dir
+            log(flog, 'skip fetch bands progress ...')
+        analyze_dir = config.analyze_tifs_dir
         
         # Build overview for analyze datas
         if need_build_overview(analyze_dir):
@@ -1118,15 +1123,23 @@ if __name__=='__main__':
 
     if config.process_visualize and not os.path.exists(config.visualize_tiles_dir):
         if len(config.visualize_bands) == 0:
-            # use all bands for visualize
-            log(flog, 'use all bands for visualize')
-            visualize_dir = projected_dir
+            # use first 3 bands for visualize
+            if bands < 3:
+                print('not enough bands to visualize')
+                exit()
+            config.visualize_bands = [1, 2, 3]
+        # check band validation
+        for bd in config.visualize_bands:
+            if bd > bands:
+                print('band out of range! %d exceed %d' % (bd, bands))
+                exit()
+        # fetch bands and do necessary datatype convertation
+        if not os.path.exists(config.visualize_tifs_dir):
+            fetch_bands(projected_dir, config.visualize_tifs_dir, config.visualize_bands, 'visualize', config.image_type)
         else:
-            if not os.path.exists(config.visualize_tifs_dir):
-                fetch_bands(projected_dir, config.visualize_tifs_dir, config.visualize_bands, 'visualize', config.image_type)
-            else:
-                log(flog, 'skip fetch bands progress ...')
-            visualize_dir = config.visualize_tifs_dir
+            log(flog, 'skip fetch bands progress ...')
+        visualize_dir = config.visualize_tifs_dir
+
         # Build overview if needed
         if need_build_overview(visualize_dir):
             build_overview(visualize_dir)
@@ -1156,7 +1169,7 @@ if __name__=='__main__':
 
         ## generate html pages to visualize tiles
         generate_pages('visualize')
-
+        # tiler
         if not os.path.exists(config.visualize_tiles_dir):
             tiler_png(config.merged_visualize_file, config.visualize_tiles_dir, str(config.visualize_level))
         else:

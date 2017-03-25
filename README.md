@@ -3,6 +3,12 @@
 * 支持多波段数据训练
 * 支持将影像转换为图片训练（消除不同传感器DN值范围不同影响）
 
+## Dependencies
+* gdal
+* skimage
+* progressbar
+* mapnik
+
 ## Usage
 
 
@@ -20,7 +26,6 @@ Global acc = 0.98006 Class average acc = 0.83417 Mean Int over Union = 0.6132
 Global acc = 0.781321, Class average acc = 0.913746, Mean Int over Union = 0.748480
 
 ## TODO
-* merge 使用 virtual dataset 格式
 * 支持指定多个tif源
 * 添加波段计算图层，如NDVI层等
 

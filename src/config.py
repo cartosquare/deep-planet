@@ -175,7 +175,12 @@ class DeepPlanetConfig:
 				self.deploy_dir = self.deploy_dir + self.deploy[i] + '_'
 
 		# 处理样本的根目录
-		self.data_root = 'training_set/%s' % self.data_name
+		self.project_dir = 'projects'
+		self.data_root = '%s/%s' % (self.project_dir, self.data_name)
+		if not os.path.exists(self.data_root):
+			print('%s not exist!' % (self.data_root))
+			return False
+
 		# log文件
 		self.log_file = '%s/log.txt' % self.data_root
 

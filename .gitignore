@@ -3,5 +3,6 @@ deploy/
 dist/
 training_set/
 config/
+projects/
 *.pyc
 .*
