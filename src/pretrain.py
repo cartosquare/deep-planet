@@ -19,6 +19,7 @@ from progressbar import *
 from skimage import io
 import json
 import globalmaptiles
+import subprocess
 
 from config import DeepPlanetConfig
 ################################## Functions ########################
@@ -131,7 +132,7 @@ def reproj(src_dir, src_proj, dest_dir):
 
         command = 'gdalwarp -s_srs EPSG:%s -t_srs EPSG:3857 -r bilinear %s %s' % (src_proj, file_path, projected_file_path)
         print(command)
-        os.system(command)
+        return execute_system_command(command)
 
 
 def fetch_bands(src_dir, dest_dir, band_list, encode_type, image_type):
@@ -157,8 +158,20 @@ def fetch_bands(src_dir, dest_dir, band_list, encode_type, image_type):
             # visualize or analyze but using png
             command = 'gdal_translate -scale -ot Byte -co COMPRESS=JPEG -co JPEG_QUALITY=100 %s %s %s' % (file_path, fetched_file_path, band_str)
         print command
+        return execute_system_command(command)
 
-        os.system(command)
+def execute_system_command(command):
+    try:
+        retcode = subprocess.call(command, shell=True)
+        if retcode < 0:
+            print("Child was terminated by signal", -retcode)
+            return False
+        else:
+            print("Child returned", retcode)
+            return True
+    except OSError as e:
+        print("Execution failed:", e)
+        return False
 
 def build_overview(work_dir):
     log(flog, 'building overview for files under %s' % work_dir)
@@ -171,7 +184,7 @@ def build_overview(work_dir):
 
 		    command = "gdaladdo -r gauss -ro %s 2 4 8 16" % (os.path.join(parent, file))
 		    print command
-		    os.system(command)
+		    return execute_system_command(command)
 
 
 def build_file_overview(file):
@@ -179,7 +192,7 @@ def build_file_overview(file):
 
     command = "gdaladdo -r gauss -ro %s 2 4 8 16" % (file)
     print command
-    os.system(command)
+    return execute_system_command(command)
 
 
 def merge_as_virtual_dataset(src_dir, merged_file):
@@ -187,14 +200,14 @@ def merge_as_virtual_dataset(src_dir, merged_file):
 
     command = 'gdalbuildvrt %s %s/*.tif' % (merged_file, src_dir)
     print command
-    os.system(command)
+    return execute_system_command(command)
 
 def merge(src_dir, merged_file):
     log(flog, 'merging files under %s to %s ...' % (src_dir, merged_file))
 
     command = 'gdal_merge.py -o %s -n 0 -a_nodata 0 %s/*.tif' % (merged_file, src_dir)
     print command
-    os.system(command)
+    return execute_system_command(command)
 
 def get_raster_extent(src):
     dataset = gdal.Open(str(src), GA_ReadOnly)
@@ -251,7 +264,10 @@ def tiler_tif(src, out):
             command = "gdalwarp -dstnodata %s -of GTiff -te %s %s %s %s -ts %d %d -r near -multi -q %s %s" % (str(dst_nodata), format(minx, '.10f'), format(miny, '.10f'), format(maxx, '.10f'), format(maxy, '.10f'), tile_size, tile_size, src, tilepath)
             
             #print command
-            os.system(command)
+            status  = execute_system_command(command)
+            if not status:
+                return False
+    return True
                 
 
 def flatten_google_dir(out, level):
@@ -289,7 +305,8 @@ def tiler_png(src, out, level):
     else:
         command = "gdal2tiles.py -s epsg:3857 -a %s -z '%s' %s %s" % (str(src_nodata), level, src, out)
     print command
-    os.system(command)
+    if not execute_system_command(command):
+        return False
 
     level_arr = level.split('-')
     if len(level_arr) == 1:
@@ -297,6 +314,8 @@ def tiler_png(src, out, level):
     else:
         for i in range(int(level_arr[0]), int(level_arr[1]) + 1):
             flatten_google_dir(out, i)
+    return True
+    
 
 def proces_analyze_img(image_file):
     if is_png(image_file):
@@ -1045,7 +1064,9 @@ if __name__=='__main__':
     # Reprojection if needed 
     if src_projection != '3857':
         if not os.path.exists(config.tifs_3857):
-            reproj(config.src_tifs, src_projection, config.tifs_3857)
+            if not reproj(config.src_tifs, src_projection, config.tifs_3857):
+                log(flog, 'reprojection fail, exit ...')
+                exit()
         else:
             log(flog, 'skip reprojtion progress ...')
         projected_dir = config.tifs_3857
@@ -1068,14 +1089,18 @@ if __name__=='__main__':
 
         # fetch bands and do necessary datatype convation
         if not os.path.exists(config.analyze_tifs_dir):
-            fetch_bands(projected_dir, config.analyze_tifs_dir, config.analyze_bands, 'analyze', config.image_type)
+            if not fetch_bands(projected_dir, config.analyze_tifs_dir, config.analyze_bands, 'analyze', config.image_type):
+                log(flog, 'fetch band fail, exit ...')
+                exit()
         else:
             log(flog, 'skip fetch bands progress ...')
         analyze_dir = config.analyze_tifs_dir
         
         # Build overview for analyze datas
         if need_build_overview(analyze_dir):
-            build_overview(analyze_dir)
+            if not build_overview(analyze_dir):
+                log(flog, 'build overview fail, exit ...')
+                exit()
         else:
             log(flog, 'skip build overview progress ...')
 
@@ -1086,10 +1111,16 @@ if __name__=='__main__':
         if tif_count > 1:
             if not os.path.exists(config.merged_analyze_file):
                 if config.virtual_dataset:
-                    merge_as_virtual_dataset(analyze_dir, config.merged_analyze_file)
+                    if not merge_as_virtual_dataset(analyze_dir, config.merged_analyze_file):
+                        log(flog, 'merge virtual dataset fail, exit ...')
+                        exit()
                 else:
-                    merge(analyze_dir, config.merged_analyze_file)
-                    build_file_overview(config.merged_analyze_file)
+                    if not merge(analyze_dir, config.merged_analyze_file):
+                        log(flog, 'merge fail, exit ...')
+                        exit()
+                    if not build_file_overview(config.merged_analyze_file):
+                        log(flog, 'build file overview fail, exit ...')
+                        exit()
             else:
                 log(flog, 'skip merge and build overview progress ...')
         else:
@@ -1109,9 +1140,13 @@ if __name__=='__main__':
         ## tiler
         if not os.path.exists(config.analyze_tiles_dir):
             if config.image_type == 'tif':
-                tiler_tif(config.merged_analyze_file, config.analyze_tiles_dir)
+                if not tiler_tif(config.merged_analyze_file, config.analyze_tiles_dir):
+                    log(flog, 'tiler tif fail, exit ...')
+                    exit()
             else:
-                tiler_png(config.merged_analyze_file, config.analyze_tiles_dir, str(config.tile_level))
+                if not tiler_png(config.merged_analyze_file, config.analyze_tiles_dir, str(config.tile_level)):
+                    log(flog, 'tiler png fail, exit ...')
+                    exit()
         
             # Delete invalid training tiles
             rm_invalid_tiles(config.analyze_tiles_dir, config.image_type, config.mode)
@@ -1135,14 +1170,18 @@ if __name__=='__main__':
                 exit()
         # fetch bands and do necessary datatype convertation
         if not os.path.exists(config.visualize_tifs_dir):
-            fetch_bands(projected_dir, config.visualize_tifs_dir, config.visualize_bands, 'visualize', config.image_type)
+            if not fetch_bands(projected_dir, config.visualize_tifs_dir, config.visualize_bands, 'visualize', config.image_type):
+                log(flog, 'fetch bands fail, exit ...')
+                exit()
         else:
             log(flog, 'skip fetch bands progress ...')
         visualize_dir = config.visualize_tifs_dir
 
         # Build overview if needed
         if need_build_overview(visualize_dir):
-            build_overview(visualize_dir)
+            if not build_overview(visualize_dir):
+                log(flog, 'build overview fail, exit ...')
+                exit()
         else:
             log(flog, 'skip build overview progress ...')
         
@@ -1151,10 +1190,16 @@ if __name__=='__main__':
         if tif_count > 1:
             if not os.path.exists(config.merged_visualize_file):
                 if config.virtual_dataset:
-                    merge_as_virtual_dataset(visualize_dir, config.merged_visualize_file)
+                    if not merge_as_virtual_dataset(visualize_dir, config.merged_visualize_file):
+                        log(flog, 'merge virtual dataset fail, exit ...')
+                        exit()
                 else:
-                    merge(visualize_dir, config.merged_visualize_file)
-                    build_file_overview(config.merged_visualize_file)
+                    if not merge(visualize_dir, config.merged_visualize_file):
+                        log(flog, 'merge fail, exit ...')
+                        exit()
+                    if not build_file_overview(config.merged_visualize_file):
+                        log(flog, 'build file overview fail, exit ...')
+                        exit()
             else:
                 log(flog, 'skip merge and build overview progress ...')
         else:
@@ -1171,7 +1216,9 @@ if __name__=='__main__':
         generate_pages('visualize')
         # tiler
         if not os.path.exists(config.visualize_tiles_dir):
-            tiler_png(config.merged_visualize_file, config.visualize_tiles_dir, str(config.visualize_level))
+            if not tiler_png(config.merged_visualize_file, config.visualize_tiles_dir, str(config.visualize_level)):
+                log(flog, 'tiler png fail, exit ...')
+                exit()
         else:
             log(flog, 'skip tiler visualize tiles progress ...')
 
