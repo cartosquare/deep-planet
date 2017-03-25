@@ -56,17 +56,22 @@ def get_epsg(src_dir):
     for file in files:
         if is_tiff(file):
             file_path = os.path.join(src_dir, file)
-            dataset = gdal.Open(file_path, gdal.GA_ReadOnly)
+            try:
+                dataset = gdal.Open(file_path, gdal.GA_ReadOnly)
 
-            srs = osr.SpatialReference()
-            srs.ImportFromESRI([dataset.GetProjection()])
+                srs = osr.SpatialReference()
+                srs.ImportFromESRI([dataset.GetProjection()])
 
-            srs.AutoIdentifyEPSG()
+                srs.AutoIdentifyEPSG()
+            except Exception as identifier:
+                log(flog, 'exception %s' % (identifier))
+                return None
+            
             if epsg_code is None:
                 epsg_code = srs.GetAuthorityCode(None)
             else:
                 if epsg_code != srs.GetAuthorityCode(None):
-                    print('%s contains mulity SpatialReference' % src_dir)
+                    log(flog, '%s contains mulity SpatialReference' % src_dir)
                     return None
     return epsg_code
 
@@ -90,7 +95,7 @@ def get_nodata(src_dir):
 
 
 def reproj(src_dir, src_proj, dest_dir):
-    log(flog, 'projecting files from %s with projection %s and nodata value %s to %s ...' % (src_dir, src_proj, src_nodata, dest_dir))
+    log(flog, 'projecting files from %s with projection %s to %s ...' % (src_dir, src_proj, dest_dir))
     create_directory_if_not_exist(dest_dir)
 
     files = os.listdir(src_dir)
@@ -220,7 +225,7 @@ def tiler_tif(src, out, level, extent):
                 maxy = maxy + mercator.Resolution[tz] * config.overlap
                 tile_size = config.image_dim + config.overlap
 
-            command = "gdalwarp -srcnodata 0 -dstnodata 0 -of GTiff -te %s %s %s %s -ts %d %d -r near -multi -q %s %s" % (format(minx, '.10f'), format(miny, '.10f'), format(maxx, '.10f'), format(maxy, '.10f'), tile_size, tile_size, src, tilepath)
+            command = "gdalwarp -dstnodata %s -of GTiff -te %s %s %s %s -ts %d %d -r near -multi -q %s %s" % (str(dst_nodata), format(minx, '.10f'), format(miny, '.10f'), format(maxx, '.10f'), format(maxy, '.10f'), tile_size, tile_size, src, tilepath)
             
             #print command
             os.system(command)
@@ -256,8 +261,10 @@ def flatten_google_dir(out, level):
 def tiler_png(src, out, level):
     log(flog, 'tilering png level %s, from %s to %s ...' % (str(level), src, out))
     create_directory_if_not_exist(out)
-
-    command = "gdal2tiles.py -s epsg:3857 -a 0 -z '%s' %s %s" % (level, src, out)
+    if src_nodata is None:
+        command = "gdal2tiles.py -s epsg:3857 -z '%s' %s %s" % (level, src, out)
+    else:
+        command = "gdal2tiles.py -s epsg:3857 -a %s -z '%s' %s %s" % (str(src_nodata), level, src, out)
     print command
     os.system(command)
 
@@ -273,8 +280,7 @@ def proces_analyze_img(image_file):
         img = io.imread(image_file)
         for x in range(0, config.image_dim):
             for y in range(0, config.image_dim):
-                #if img[x][y][0] == 0 and img[x][y][1] == 0 and img[x][y][2] == 0 and img[x][y][3] == 0:
-                if img[x][y][0] == 0 and img[x][y][1] == 0 and img[x][y][2] == 0:
+                if img[x][y][0] == dst_nodata and img[x][y][1] == dst_nodata and img[x][y][2] == dst_nodata:
                     os.unlink(image_file)
                     return 
 
@@ -283,7 +289,7 @@ def proces_predict_img(image_file):
         img = io.imread(image_file)
         for x in range(0, config.image_dim + config.overlap):
             for y in range(0, config.image_dim + config.overlap):
-                if img[x][y][0] != 0 or img[x][y][1] != 0 or img[x][y][2] != 0:
+                if img[x][y][0] != dst_nodata or img[x][y][1] != dst_nodata or img[x][y][2] != dst_nodata:
                     return 
         os.unlink(image_file)
 
@@ -323,7 +329,7 @@ def proces_tif(tif_file):
 
         for r in range(row):
             for c in range(col):
-                if dataraster[r][c] == 0 or dataraster[r][c] is None:
+                if dataraster[r][c] == dst_nodata or dataraster[r][c] is None:
                     #print r, c, dataraster[r][c]
                     nodata = True
                     break
@@ -1005,21 +1011,33 @@ if __name__=='__main__':
         exit()
     
     config_cmd = parseOptions(sys.argv[1])
+    # Global configure object
     config = DeepPlanetConfig()
     if not config.Initialize(config_cmd):
         print('initialize fail! exist...')
         exit()
 
-    # Step 0, Open log file
+    # Open log file
     flog = open(config.log_file, 'w')
     log(flog, 'tiler raster begins, this may take a while, go to drink a cup of coffee ...')
 
+    # generate html pages to visualize tiles
     generate_pages()
 
-    # Step 1, Reprojection if needed 
+    # Reprojection if needed 
+    ## get projection from source tifs
     src_projection = get_epsg(config.src_tifs)
+    if src_projection is None:
+        log(flog, 'source tifs has no projection find! exist ...')
+        exit()
+
+    ## get nodata value from source tifs
     src_nodata = get_nodata(config.src_dir)
-    print('projection: %d, nodata: %s' % (src_projection, str(src_nodata))
+    if src_nodata is None:
+        dst_nodata = 0
+    else:
+        dst_nodata = src_nodata
+    print('src projection: %d, src nodata: %s, dst nodata: %s' % (src_projection, str(src_nodata), str(dst_nodata))
 
     if src_projection != 3857:
         if not os.path.exists(config.tifs_3857):
@@ -1079,17 +1097,11 @@ if __name__=='__main__':
             rm_invalid_tiles(config.analyze_tiles_dir, config.image_type, config.mode)
         else:
             log(flog, 'skip tiler tiles and remove invalid tiles progress ...')
-    
-        # overlapping for predict
-        # if config.mode == 'predict':
-        #    create_overlap_predict_tiles(config.analyze_tiles_dir, config.analyze_tiles_overlap_dir, config.overlap)
-        #    write_predict_txt(config.analyze_tiles_overlap_dir, config.test_txt, config.image_type)
     else:
         log(flog, 'skip analyze progress ...')
 
 
     if config.process_visualize and not os.path.exists(config.visualize_tiles_dir):
-        # Step 2
         if len(config.visualize_bands) == 0:
             # use all bands for visualize
             log(flog, 'use all bands for visualize')
@@ -1129,7 +1141,7 @@ if __name__=='__main__':
     
     if config.mode == 'predict':
         if config.image_type == 'tif':
-            # already doing overlap, just direct the folder
+            # already doing overlap, just direct to the folder
             config.analyze_tiles_overlap_dir = config.analyze_tiles_dir
         else:
             create_overlap_predict_tiles(config.analyze_tiles_dir, config.analyze_tiles_overlap_dir, config.overlap)
