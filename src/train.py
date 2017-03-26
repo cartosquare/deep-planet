@@ -3,7 +3,7 @@ import os
 import sys
 import json
 import datetime
-
+import subprocess
 from config import DeepPlanetConfig
 
 def log(file_handle, message):
@@ -147,16 +147,29 @@ def gen_infence_file(mode):
                 ftrain.write('    kernel_size: 3\n')
                 ftrain.write('  }\n')
 
+def execute_system_command(command):
+    try:
+        retcode = subprocess.call(command, shell=True)
+        if retcode < 0:
+            print("Child was terminated by signal", -retcode)
+            return False
+        else:
+            print("Child returned", retcode)
+            return True
+    except OSError as e:
+        print("Execution failed:", e)
+        return False
+
 def train():
     if config.use_gpu:
         log(flog, 'starting training  using gpu %d' % config.gpu)
-        command = './caffe-segnet/build/tools/caffe train -gpu %d -solver %s' % (config.gpu, os.path.join(config.deploy_dir, config.solver))
+        command = '%s train -gpu %d -solver %s' % (caffe_bin, config.gpu, os.path.join(config.deploy_dir, config.solver))
     else:
         log(flog, 'starting training using cpu')
-        command = './caffe-segnet/build/tools/caffe train -solver %s' % (os.path.join(config.deploy_dir, config.solver))
+        command = '%s train -solver %s' % (caffe_bin, os.path.join(config.deploy_dir, config.solver))
 
     print command
-    os.system(command)
+    return execute_system_command(command)
 
 
 if __name__=='__main__': 
@@ -170,6 +183,14 @@ if __name__=='__main__':
     if not config.Initialize(config_cmd):
         print('initialize fail! exist...')
         exit()
+
+    # for pyinstaller
+    if getattr(sys, 'frozen', False):
+        # we are running in a bundle
+        caffe_bin = os.path.join(sys._MEIPASS, 'caffe')
+    else:
+        # we are running in a normal Python environment
+        caffe_bin = 'caffe-segnet/build/tools/caffe'
 
     # Step 0, Open log file
     flog = open(config.log_file, 'w')
