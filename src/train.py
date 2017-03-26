@@ -3,6 +3,14 @@ import os
 import sys
 import json
 import datetime
+
+# for pyinstaller dependency ...
+from skimage import io
+caffe_root = './caffe-segnet/'
+import sys
+sys.path.insert(0, caffe_root + 'python')
+import caffe
+
 import subprocess
 from config import DeepPlanetConfig
 
@@ -121,7 +129,7 @@ def gen_infence_file(mode):
                     ftrain.write('  top: "data"\n')
                     ftrain.write('  top: "label"\n')
                     ftrain.write('  dense_image_data_param {\n')
-                    ftrain.write('    source: "%s/%s.txt"\n' % config.deploy_dir, mode)
+                    ftrain.write('    source: "%s/%s.txt"\n' % (config.deploy_dir, mode))
                     ftrain.write('    batch_size: 1\n')
                     ftrain.write('  }\n')
 
