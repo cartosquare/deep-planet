@@ -1,12 +1,12 @@
 # -*- mode: python -*-
-
+import os
 from PyInstaller.utils.hooks import collect_data_files, collect_submodules
 
 block_cipher = pyi_crypto.PyiBlockCipher(key='snoopyxu19910319')
 
-
+cwd = os.cwd()
 a = Analysis(['../src/delete_project.py'],
-             pathex=['/home/atlasxu/workspace/deep-planet'],
+             pathex=[cwd],
              binaries=[],
              datas=[],
              hiddenimports=[],

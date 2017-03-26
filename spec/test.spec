@@ -1,12 +1,12 @@
 # -*- mode: python -*-
-
+import os
 from PyInstaller.utils.hooks import collect_data_files, collect_submodules
 
 block_cipher = pyi_crypto.PyiBlockCipher(key='snoopyxu19910319')
 
-
+cwd = os.cwd()
 a = Analysis(['../src/test.py'],
-             pathex=['/home/atlasxu/workspace/deep-planet', '/home/atlasxu/workspace/deep-planet/caffe-segnet/python'],
+             pathex=[cwd, os.path.join(cwd, 'caffe-segnet/python')],
              binaries=[],
              datas=collect_data_files("skimage.io._plugins"),
              hiddenimports=collect_submodules('skimage.io._plugins') + ['google.protobuf.internal'],

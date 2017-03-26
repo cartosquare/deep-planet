@@ -1,12 +1,12 @@
 # -*- mode: python -*-
-
+import os
 from PyInstaller.utils.hooks import collect_data_files, collect_submodules
 
 block_cipher = pyi_crypto.PyiBlockCipher(key='snoopyxu19910319')
 
-
+cwd = os.cwd()
 a = Analysis(['../src/pretrain.py'],
-             pathex=['/home/atlasxu/workspace/deep-planet'],
+             pathex=[cwd],
              binaries=[],
              datas=[('/usr/lib/mapnik/3.0/input/gdal.input', 'share/mapnik/input'), ('/usr/lib/mapnik/3.0/input/ogr.input', 'share/mapnik/input'), ('/usr/lib/mapnik/3.0/input/shape.input', 'share/mapnik/input'), ('/usr/bin/gdaladdo', '.'), ('/usr/bin/gdalbuildvrt', '.'), ('/usr/bin/gdal_translate', '.'), ('/usr/bin/gdalwarp', '.')] + collect_data_files("skimage.io._plugins"),
              hiddenimports=collect_submodules('skimage.io._plugins'),
