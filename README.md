@@ -109,8 +109,17 @@ evaluate: 184 images/min
 ```
 pip install pyinstaller
 ```
+
 * [upx](https://github.com/upx/upx/releases/tag/v3.93)
+```
+cd lib
+tar -xvf upx-3.93-amd64_linux.tar.xz
+```
+
 * Crypto
+```
+pip install pycrypto
+```
 
 ## bundle command
 ```
