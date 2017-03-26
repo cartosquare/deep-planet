@@ -51,6 +51,10 @@ modify INCLUDE_DIRS in Makefile.config
 INCLUDE_DIRS := $(PYTHON_INCLUDE) /usr/local/include /usr/include/hdf5/serial /usr/include/gdal
 ```
 
+### ImportError: No module named google.protobuf.internal
+```
+sudo apt-get install python-protobuf
+```
 
 ### other dependencies
 * pip

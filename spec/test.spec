@@ -6,10 +6,10 @@ block_cipher = pyi_crypto.PyiBlockCipher(key='snoopyxu19910319')
 
 
 a = Analysis(['../src/test.py'],
-             pathex=['/home/atlasxu/workspace/deep-planet'],
+             pathex=['/home/atlasxu/workspace/deep-planet', '/home/atlasxu/workspace/deep-planet/caffe-segnet/python'],
              binaries=[],
              datas=collect_data_files("skimage.io._plugins"),
-             hiddenimports=collect_submodules('skimage.io._plugins'),
+             hiddenimports=collect_submodules('skimage.io._plugins') + ['google.protobuf.internal'],
              hookspath=[],
              runtime_hooks=[],
              excludes=[],
