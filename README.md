@@ -73,7 +73,6 @@ pip install progressbar
 sudo apt-get install python-mapnik
 ```
 
-
 ## Usage
 
 
@@ -100,10 +99,38 @@ test:
 predict:
 evaluate: 184 images/min
 
-## bundle
+## How to Bundle program?
+### dependencies
 * pyinstaller
 ```
 pip install pyinstaller
 ```
 * [upx](https://github.com/upx/upx/releases/tag/v3.93)
 * Crypto
+
+## bundle command
+```
+pyinstaller --noconfirm --upx-dir=/home/atlasxu/workspace/upx-3.93-amd64_linux spec/pretrain.spec
+```
+
+### fix mapnik path problem
+change file /usr/lib/python2.7/dist-packages/mapnik/paths.py to following:
+
+```
+import os
+import sys
+import os.path
+
+mapniklibpath = '/usr/lib/mapnik/3.0'
+mapniklibpath = os.path.normpath(mapniklibpath)
+if getattr(sys, 'frozen', False):
+        # we are running in a bundle
+        bundle_dir = sys._MEIPASS
+        inputpluginspath = os.path.join(bundle_dir,'share/mapnik/input')
+else:
+        inputpluginspath = os.path.join(mapniklibpath,'input')
+
+fontscollectionpath = os.path.normpath('/usr/share/fonts')
+__all__ = [mapniklibpath,inputpluginspath,fontscollectionpath]
+```
+
