@@ -30,6 +30,11 @@ class DeepPlanetConfig:
 		else:
 			self.process_analyze = True
 
+		if 'process_label' in pobject:
+			self.process_label = pobject['process_label']
+		else:
+			self.process_label = True
+
 		# 训练样本大小，目前只支持 256px * 256px
 		self.image_dim = 256
 

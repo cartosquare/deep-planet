@@ -1032,6 +1032,7 @@ def generate_pages(type):
         with open(config.label_page, 'w') as f:
             f.write(label_str)
 
+
 if __name__=='__main__': 
     # Parse command line options
     if len(sys.argv) < 2:
@@ -1253,7 +1254,7 @@ if __name__=='__main__':
         sys.exit()
 
     ######### vector labels ###########
-    if not os.path.exists(config.labels_dir):
+    if config.process_label and not os.path.exists(config.labels_dir):
         if not os.path.exists(config.overlay_tiles_dir):
             create_utfgrids()
         else:
@@ -1269,17 +1270,20 @@ if __name__=='__main__':
     else:
         log(flog, 'skip tiler vector tiles, copy labels and grid2image progress ...')
 
-    ######## split train test ##########
-    split_train_test()
+    if config.process_label:
+        ######## split train test ##########
+        split_train_test()
 
-    ######## deploy ####################
-    if len(config.deploy) >= 1:
-        deploy()
+        ######## deploy ####################
+        if len(config.deploy) >= 1:
+            deploy()
 
-        ######## calculate weights ##########
-        calculate_weights()
+            ######## calculate weights ##########
+            calculate_weights()
+        else:
+            log(flog, 'skip deploy and calculating weights progress ...')
     else:
-        log(flog, 'skip deploy and calculating weights progress ...')
+        log(flog, 'skip split train test and deploy progress ...')
 
     log(flog, 'finished!')
 
