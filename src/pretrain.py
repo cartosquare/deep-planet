@@ -206,6 +206,7 @@ def merge_as_virtual_dataset(src_dir, merged_file):
 def merge(src_dir, merged_file):
     log(flog, 'merging files under %s to %s ...' % (src_dir, merged_file))
 
+    ## TODO: CHANGE THE SRC_NODAT AND DEST_NODATA SPECIFY!!!!
     command = 'gdal_merge.py -o %s -n 0 -a_nodata 0 %s/*.tif' % (merged_file, src_dir)
     print command
     gdal_merge.main(command.split())
@@ -574,7 +575,6 @@ def copy_labels():
         print 'saving to ' + label_new_dir
         os.mkdir(label_new_dir)
 
-    pow15 = math.pow(2, int(config.tile_level))
     train_files = os.listdir(train_dir)
 
     total_files = len(train_files)
@@ -801,12 +801,7 @@ def grid2image():
     pbar.finish()
 
 
-def split_train_test():
-    train_dir = config.analyze_tiles_dir
-    label_dir = config.labels_dir
-    train_file = config.train_txt
-    test_file = config.test_txt
-
+def split_train_test(train_dir, label_dir, train_file, test_file):
     log(flog, 'split train test from %s | %s ...' % (train_dir, label_dir))
     
     ftrain = open(train_file, 'w')
@@ -819,8 +814,6 @@ def split_train_test():
     cut_line = int(total_files * 0.8)
 
     print('#total tiles: %d, #training tiles: %d, #testing tiles: %d' % (total_files, cut_line, total_files - cut_line))
-
-    pow15 = math.pow(2, int(config.tile_level))
 
     for i in range(0, total_files):
         tile_name = tiles[i]
@@ -864,18 +857,17 @@ def split_train_test():
 def calculate_weights():
     log(flog, 'calculating weights to %s ...' % (config.weight_file))
 
-    items = config.labels_dir.split('/')
-    label_dir_name = items[len(items) - 1]
-
     images = []
-    for ele in config.deploy:
-        img_dir = '%s/%s/%s' % (config.project_dir, ele, label_dir_name)
-        imgs = os.listdir(img_dir)
-
-        for i in range(len(imgs)):
-            imgs[i] = os.path.join(img_dir, imgs[i])
-
-        images = images + imgs
+    train_txt = '%s/train.txt' % config.deploy_dir
+    test_txt = '%s/test.txt' % config.deploy_dir
+    with open(train_txt, 'r') as f:
+        for line in f:
+            items = line.strip().split()
+            images.append(items[1])
+    with open(test_txt, 'r') as f:
+        for line in f:
+            items = line.strip().split()
+            images.append(items[1])
 
     # class, pixels, files
     nclass = config.classes
@@ -936,6 +928,45 @@ def calculate_weights():
         for i in range(nclass):
             f.write('class_weighting: %f\n' % class_weights[i])
     f.close()
+
+
+def deploy_stack():
+    log(flog, 'deploy dataset %s to %s ...' % (str(config.deploy), config.deploy_dir))
+    if len(config.deploy) < 2:
+        print('Error, deploy mode set to stack really need two or more deploy datasets')
+        return
+
+    if not os.path.exists(config.deploy_dir):
+        os.mkdir(config.deploy_dir) 
+    if not os.path.exists(config.stack_dir):
+        os.mkdir(config.stack_dir)
+
+    # stack images
+    items = config.analyze_tifs_dir.split('/')
+    analyze_tifs_dir_name = items[len(items) - 1]
+
+    tiles_dir = '%s/%s/%s' % (config.project_dir, config.deploy[0], analyze_tifs_dir_name)
+    tiles_list = os.listdir(tiles_dir)
+    for tile in tiles_list:
+        tile_file = os.path.join(tiles_dir, tile)
+        if is_tiff(tile_file):
+            has_corres_file = True
+            tile_str = tile_file
+            for i in range(1, len(config.deploy)):
+                corres_tile = '%s/%s/%s/%s' % (config.project_dir, config.deploy[i], analyze_tifs_dir_name, tile)
+                if not os.path.exists(corres_tile):
+                    has_corres_file = False
+                tile_str = '%s %s' % (tile_str, corres_tile)
+
+            if has_corres_file:
+                # stack
+                command = 'gdal_merge.py -seperate %s -o %s' % (tile_str, os.path.join(config.stack_dir, tile))
+                gdal_merge.main(command.split())
+
+    # generate train test list
+    train_txt = '%s/train.txt' % config.deploy_dir
+    test_txt = '%s/test.txt' % config.deploy_dir
+    split_train_test(config.stack_dir, config.labels_dir, train_txt, test_txt)
 
 
 def deploy():
@@ -1272,11 +1303,15 @@ if __name__=='__main__':
 
     if config.process_label:
         ######## split train test ##########
-        split_train_test()
+        split_train_test(config.analyze_tiles_dir, config.labels_dir, config.train_txt, config.test_txt)
 
         ######## deploy ####################
         if len(config.deploy) >= 1:
-            deploy()
+            if config.deploy_mode == 'append':
+                deploy()
+            else:
+                # config.deploy_mode == 'stack'
+                deploy_stack()
 
             ######## calculate weights ##########
             calculate_weights()

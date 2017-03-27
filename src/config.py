@@ -189,6 +189,15 @@ class DeepPlanetConfig:
 			else:
 				self.deploy_dir = self.deploy_dir + self.deploy[i] + '_'
 
+		# 不同数据集的影像结合进行训练的两种方式
+		self.deploy_mode = 'append'
+		if 'deploy_mode' in pobject:
+			# 波段叠加，适合区域相同但是波段不同的数据
+			self.deploy_mode = pobject['deploy_mode']
+		else:
+			# 简单合并，适合于不同年份或是不同区域的数据
+			self.deploy_mode = 'append'
+
 		# 处理样本的根目录
 		self.project_dir = 'projects'
 		self.data_root = '%s/%s' % (self.project_dir, self.data_name)
@@ -259,6 +268,8 @@ class DeepPlanetConfig:
 		# 切割后的训练瓦片目录
 		self.visualize_tiles_dir = '%s/visualize_tiles' % self.data_root
 
+		# 多个影像重叠的目录
+		self.stack_dir = '%s/stack_tiles' % self.deploy_dir
 		#******************************* 标注样本准备涉及的参数 *************************
 		# 训练标注，shapefile格式，所在的目录
 		self.overlay_dir = '%s/overlay' % self.data_root

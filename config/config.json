@@ -13,6 +13,7 @@
     "class_field": "[str], field in the shapefile that difference classes",
     "ignore_background": "[bool], whether to ignore background. Default to ignore, unless there are only two classes plus background.",
     "deploy": "[array], the element in array should be one or many data_name",
+    "deploy_mode": "[str], when deploying two or more datasets, use deploy_mode to set how they combine, could be append or stack. Default is append.",
     "snapshot": "[int], inteval of saving training result.",
     "use_snapshot": "[int], use which snapshot to generate test weight.",
     "use_gpu": "[bool], use gpu or not",
