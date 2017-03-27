@@ -332,8 +332,8 @@ def proces_analyze_img(image_file):
 def proces_predict_img(image_file):
     if is_png(image_file):
         img = io.imread(image_file)
-        for x in range(0, config.image_dim + config.overlap):
-            for y in range(0, config.image_dim + config.overlap):
+        for x in range(0, config.image_dim):
+            for y in range(0, config.image_dim):
                 if img[x][y][0] != dst_nodata or img[x][y][1] != dst_nodata or img[x][y][2] != dst_nodata:
                     return 
         os.unlink(image_file)
