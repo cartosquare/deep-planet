@@ -9,9 +9,8 @@
     "visualize_bands": "[array], bands for visualize, e.g. [1, 2, 3]. If not specified, will use all bands",
     "virtual_dataset": "[bool], use virtual dataset or not when merge, default to false",
     "data_name": "[str], training dataset name.",
-    "classes": "[int], class count of this segmentation task.",
     "class_field": "[str], field in the shapefile that difference classes",
-    "ignore_class": "[int], ignore a class, often background. Not required, if not specified, will care about all the classes.",
+    "ignore_background": "[bool], whether to ignore background. Default to ignore, unless there are only two classes plus background.",
     "deploy": "[array], the element in array should be one or many data_name",
     "snapshot": "[int], inteval of saving training result.",
     "use_snapshot": "[int], use which snapshot to generate test weight.",
@@ -19,6 +18,6 @@
     "gpu": "[bool], use which gpu",
     "batch_size": "[int], batch size when training. default to 6",
     "max_iter": "[int], max training iters, default to 400000",
-    "class_names": "[array], class names",
+    "class_names": "[array], class names, how many class names here indicts how manay classes, and each class is represented by its array index. There is an extra class, namely background class exists. You can choose to ignore this class by using ignore_background option",
     "class_colors": "[array], color of each class, e.g. [[r,g,b,a],[r,g,b,a], default to random generated colors"
 }
