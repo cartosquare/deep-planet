@@ -151,7 +151,7 @@ class DeepPlanetConfig:
 
 		# background class set to the array index of last class
 		self.background_class = len(self.class_names)
-		
+
 		# whether to ignore background
 		if 'ignore_background' in pobject:
 			self.ignore_background = pobject['ignore_background']
@@ -163,7 +163,7 @@ class DeepPlanetConfig:
 				self.ignore_background = True
 
 		# 需要分割的类别数
-		self.classes = len(class_names)
+		self.classes = len(self.class_names)
 		if not self.ignore_background:
 			# add background_class
 			self.classes = self.classes + 1
