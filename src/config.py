@@ -72,13 +72,6 @@ class DeepPlanetConfig:
 			self.virtual_dataset = pobject['virtual_dataset']
 		else:
 			self.virtual_dataset = False
-			
-		# 需要分割的类别数
-		if 'classes' in pobject:
-			self.classes = pobject['classes']
-		else:
-			print('warning: must specify classes')
-			return False
 
 		if 'overlap' in pobject:
 			self.overlap = pobject['overlap']
@@ -91,20 +84,6 @@ class DeepPlanetConfig:
 		else:
 			print('warning: must specify class field!')
 			return False
-
-		#以及需要忽略的类别（一般是背景）
-		#ignore_class = None # 
-		if 'ignore_class' in pobject:
-			self.ignore_class = pobject['ignore_class']
-		else:
-			print('warning: no ignore_class set! default to None')
-			self.ignore_class = None
-
-		if 'background_class' in pobject:
-			self.background_class = pobject['background_class']
-		else:
-			print('warning: no background class set! default to ignore class')
-			self.background_class = self.ignore_class
 
 		# 数据目录。即处理训练样本的目录所在。执行一个分割任务时，一般在training_set目录下新建一个目录。
 		if 'data_name' in pobject:
@@ -162,12 +141,37 @@ class DeepPlanetConfig:
 		else:
 			print 'class_names must specified!!!'
 			return False
+
 		if 'class_colors' in pobject:
 			self.class_colors = pobject['class_colors']
 		else:
 			self.class_colors = []
 			for i in range(0, len(self.class_names)):
 				self.class_colors.append([random.randint(0, 255),  random.randint(0, 255), random.randint(0, 255), 255])
+
+		# background class set to the array index of last class
+		self.background_class = len(self.class_names)
+		
+		# whether to ignore background
+		if 'ignore_background' in pobject:
+			self.ignore_background = pobject['ignore_background']
+		else:
+			if self.background_class == 1:
+				# do not ignore background when there are only two classes
+				self.ignore_background = False
+			else:
+				self.ignore_background = True
+
+		# 需要分割的类别数
+		self.classes = len(class_names)
+		if not self.ignore_background:
+			# add background_class
+			self.classes = self.classes + 1
+
+		if not self.ignore_background:
+			print('#classes: %d, with background_class %d' % (self.classes, self.background_class))
+		else:
+			print('#classes: %d, without background_class %d' % (self.classes, self.background_class))
 
 		# 发布训练样本的目录
 		self.deploy_dir = 'output/'

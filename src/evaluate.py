@@ -52,13 +52,7 @@ if __name__ == '__main__':
                 iter = iter + 1
 
     num_classes = config.classes
-    if not config.ignore_class:
-        unknown_classes = 1000
-    else:
-        unknown_classes = config.ignore_class
-
     print('iters', iter)
-    print('unknown_classes', unknown_classes)
 
     total_points = 0
     cf = np.zeros((iter, num_classes, num_classes))
@@ -77,11 +71,11 @@ if __name__ == '__main__':
         annot = io.imread(os.path.join(gt_dir, '%d.png' % i))
         annot = annot + 1
 
-        pixels_ingore = (annot == unknown_classes)
-        #print('ignore pixels %d' % (np.sum(pixels_ingore)))
-
-        pred[pixels_ingore] = 0
-        annot[pixels_ingore] = 0
+        if config.ignore_background:
+            unknown_classes = config.classes + 1
+            pixels_ingore = (annot == unknown_classes)
+            pred[pixels_ingore] = 0
+            annot[pixels_ingore] = 0
 
         total_points = total_points + np.sum(annot > 0)
 

@@ -95,8 +95,8 @@ def gen_train_file():
                 ftrain.write('    kernel_size: 3\n')
                 ftrain.write('  }\n')
             if len(items) == 2 and items[0] == 'weight_by_label_freqs':
-                if config.ignore_class:
-                    ftrain.write('    ignore_label: %d\n' % (config.ignore_class))
+                if config.ignore_background:
+                    ftrain.write('    ignore_label: %d\n' % (config.classes))
                 with open(config.weight_file, 'r') as wf:
                     for wl in wf:
                         ftrain.write('    %s' % (wl))
