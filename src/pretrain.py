@@ -168,7 +168,6 @@ def execute_system_command(command):
             print("Child was terminated by signal", -retcode)
             return False
         else:
-            print("Child returned", retcode)
             return True
     except OSError as e:
         print("Execution failed:", e)
