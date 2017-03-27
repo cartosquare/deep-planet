@@ -142,13 +142,6 @@ class DeepPlanetConfig:
 			print 'class_names must specified!!!'
 			return False
 
-		if 'class_colors' in pobject:
-			self.class_colors = pobject['class_colors']
-		else:
-			self.class_colors = []
-			for i in range(0, len(self.class_names)):
-				self.class_colors.append([random.randint(0, 255),  random.randint(0, 255), random.randint(0, 255), 255])
-
 		# background class set to the array index of last class
 		self.background_class = len(self.class_names)
 
@@ -167,6 +160,13 @@ class DeepPlanetConfig:
 		if not self.ignore_background:
 			# add background_class
 			self.classes = self.classes + 1
+
+		if 'class_colors' in pobject:
+			self.class_colors = pobject['class_colors']
+		else:
+			self.class_colors = []
+			for i in range(0, self.classes):
+				self.class_colors.append([random.randint(0, 255),  random.randint(0, 255), random.randint(0, 255), 255])
 
 		if not self.ignore_background:
 			print('#classes: %d, with background_class %d' % (self.classes, self.background_class))
