@@ -406,13 +406,13 @@ def main( argv=None ):
         band_type = file_infos[0].band_type
 
     # Try opening as an existing file.
-    gdal.PushErrorHandler( 'CPLQuietErrorHandler' )
-    t_fh = gdal.Open( out_file, gdal.GA_Update )
-    gdal.PopErrorHandler()
+    # gdal.PushErrorHandler( 'CPLQuietErrorHandler' )
+    # t_fh = gdal.Open( out_file, gdal.GA_Update )
+    # gdal.PopErrorHandler()
     
     # Create output file if it does not already exist.
-    if t_fh is None:
-    
+    # if t_fh is None:
+    if True:
         if bTargetAlignedPixels:
             ulx = math.floor(ulx / psize_x) * psize_x
             lrx = math.ceil(lrx / psize_x) * psize_x

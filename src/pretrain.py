@@ -941,10 +941,11 @@ def deploy_stack():
         os.mkdir(config.stack_dir)
 
     # stack images
-    items = config.analyze_tifs_dir.split('/')
-    analyze_tifs_dir_name = items[len(items) - 1]
+    items = config.analyze_tiles_dir.split('/')
+    analyze_tiles_dir_name = items[len(items) - 1]
 
-    tiles_dir = '%s/%s/%s' % (config.project_dir, config.deploy[0], analyze_tifs_dir_name)
+    tiles_dir = '%s/%s/%s' % (config.project_dir, config.deploy[0], analyze_tiles_dir_name)
+    print('tiles_dir', tiles_dir)
     tiles_list = os.listdir(tiles_dir)
     for tile in tiles_list:
         tile_file = os.path.join(tiles_dir, tile)
@@ -952,14 +953,19 @@ def deploy_stack():
             has_corres_file = True
             tile_str = tile_file
             for i in range(1, len(config.deploy)):
-                corres_tile = '%s/%s/%s/%s' % (config.project_dir, config.deploy[i], analyze_tifs_dir_name, tile)
+                corres_tile = '%s/%s/%s/%s' % (config.project_dir, config.deploy[i], analyze_tiles_dir_name, tile)
                 if not os.path.exists(corres_tile):
                     has_corres_file = False
                 tile_str = '%s %s' % (tile_str, corres_tile)
 
             if has_corres_file:
                 # stack
-                command = 'gdal_merge.py -separate %s -o %s' % (tile_str, os.path.join(config.stack_dir, tile))
+                output_file = os.path.join(config.stack_dir, tile)
+                #delete if already exist
+                if os.path.exists(output_file):
+                    os.unlink(output_file)
+                
+                command = 'gdal_merge.py -separate %s -o %s' % (tile_str, output_file)
                 gdal_merge.main(command.split())
 
     # generate train test list
