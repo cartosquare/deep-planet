@@ -959,7 +959,7 @@ def deploy_stack():
 
             if has_corres_file:
                 # stack
-                command = 'gdal_merge.py -seperate %s -o %s' % (tile_str, os.path.join(config.stack_dir, tile))
+                command = 'gdal_merge.py -separate %s -o %s' % (tile_str, os.path.join(config.stack_dir, tile))
                 gdal_merge.main(command.split())
 
     # generate train test list
