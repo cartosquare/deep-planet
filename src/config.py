@@ -100,6 +100,12 @@ class DeepPlanetConfig:
 			print('warning: no ignore_class set! default to None')
 			self.ignore_class = None
 
+		if 'background_class' in pobject:
+			self.background_class = pobject['background_class']
+		else:
+			print('warning: no background class set! default to ignore class')
+			self.background_class = self.ignore_class
+
 		# 数据目录。即处理训练样本的目录所在。执行一个分割任务时，一般在training_set目录下新建一个目录。
 		if 'data_name' in pobject:
 			self.data_name = pobject['data_name']

@@ -761,8 +761,8 @@ def proces_label_img(tile):
                         find = True
                         break
             if not find:
-                # Shall we really need ignore class?
-                img[row][col] = config.ignore_class
+                # set to backgournd class
+                img[row][col] = config.background_class
     
     img = img.astype(int)
     io.imsave(new_tile_file, img)
