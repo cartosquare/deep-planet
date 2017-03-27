@@ -93,6 +93,10 @@ Global acc = 0.98006 Class average acc = 0.83417 Mean Int over Union = 0.6132
 ### 高分二号卫星 4 3 2假彩色合成 缩放png
 Global acc = 0.781321, Class average acc = 0.913746, Mean Int over Union = 0.748480
 
+## 河流分割
+### LandSat卫星 5 6 4 波段合成，缩放png
+Global acc = 0.956189, Class average acc = 0.926455, Mean Int over Union = 0.834801
+
 ## TODO
 * 支持指定多个tif源
 * 添加波段计算图层，如NDVI层等
