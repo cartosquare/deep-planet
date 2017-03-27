@@ -27,8 +27,8 @@ if __name__ == '__main__':
         print('initialize fail! exist...')
         exit()
 
-    if os.path.exists(config.deploy_dir):
-        shutil.rmtree(config.deploy_dir)
+    # if os.path.exists(config.deploy_dir):
+    #     shutil.rmtree(config.deploy_dir)
 
     files = os.listdir(config.data_root)
     for file in files:
