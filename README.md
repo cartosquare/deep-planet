@@ -96,9 +96,11 @@ Global acc = 0.781321, Class average acc = 0.913746, Mean Int over Union = 0.748
 ## 河流分割
 ### LandSat卫星 5 6 4 波段合成，缩放png
 Global acc = 0.956189, Class average acc = 0.926455, Mean Int over Union = 0.834801
+### LandSat卫星 5 6 4 波段，tif
+Global acc = 0.940596, Class average acc = 0.916429, Mean Int over Union = 0.796721
+
 
 ## TODO
-* 支持指定多个tif源
 * 添加波段计算图层，如NDVI层等
 
 ## Performance
