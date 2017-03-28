@@ -258,8 +258,8 @@ def tiler_tif(src, out):
                 tile_size = config.image_dim
             else:
                 # predict mode, extent on left and top
-                minx = minx - mercator.Resolution[tz] * config.overlap
-                maxy = maxy + mercator.Resolution[tz] * config.overlap
+                minx = minx - mercator.Resolution(tz) * config.overlap
+                maxy = maxy + mercator.Resolution(tz) * config.overlap
                 tile_size = config.image_dim + config.overlap
 
             command = "%s -of GTiff -te %s %s %s %s -ts %d %d -r near -multi -q %s %s" % (os.path.join(bundle_dir, 'gdalwarp'), format(minx, '.10f'), format(miny, '.10f'), format(maxx, '.10f'), format(maxy, '.10f'), tile_size, tile_size, src, tilepath)
