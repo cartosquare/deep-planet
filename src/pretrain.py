@@ -1105,7 +1105,7 @@ if __name__=='__main__':
     ## get nodata value from source tifs
     src_nodata = get_nodata(config.src_tifs)
     dst_nodata = src_nodata
-    if config.image_type == 'png':
+    if config.image_type == 'png' or src_nodata is None:
         dst_nodata = 0
         
     ## get bands info
