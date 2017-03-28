@@ -205,8 +205,7 @@ def merge_as_virtual_dataset(src_dir, merged_file):
 def merge(src_dir, merged_file):
     log(flog, 'merging files under %s to %s ...' % (src_dir, merged_file))
 
-    ## TODO: CHANGE THE SRC_NODAT AND DEST_NODATA SPECIFY!!!!
-    command = 'gdal_merge.py -o %s -n 0 -a_nodata 0 %s/*.tif' % (merged_file, src_dir)
+    command = 'gdal_merge.py -o %s %s/*.tif' % (merged_file, src_dir)
     print command
     gdal_merge.main(command.split())
     return True
@@ -263,7 +262,7 @@ def tiler_tif(src, out):
                 maxy = maxy + mercator.Resolution[tz] * config.overlap
                 tile_size = config.image_dim + config.overlap
 
-            command = "%s -dstnodata %s -of GTiff -te %s %s %s %s -ts %d %d -r near -multi -q %s %s" % (os.path.join(bundle_dir, 'gdalwarp'), str(dst_nodata), format(minx, '.10f'), format(miny, '.10f'), format(maxx, '.10f'), format(maxy, '.10f'), tile_size, tile_size, src, tilepath)
+            command = "%s -of GTiff -te %s %s %s %s -ts %d %d -r near -multi -q %s %s" % (os.path.join(bundle_dir, 'gdalwarp'), format(minx, '.10f'), format(miny, '.10f'), format(maxx, '.10f'), format(maxy, '.10f'), tile_size, tile_size, src, tilepath)
             
             #print command
             status  = execute_system_command(command)
@@ -1105,14 +1104,13 @@ if __name__=='__main__':
 
     ## get nodata value from source tifs
     src_nodata = get_nodata(config.src_tifs)
-    if src_nodata is None:
+    dst_nodata = src_nodata
+    if config.image_type == 'png':
         dst_nodata = 0
-    else:
-        dst_nodata = src_nodata
-    
+        
     ## get bands info
     bands = get_bands(config.src_tifs)
-    print('src projection: %s, src nodata: %s, dst nodata: %s, #bands: %d' % (src_projection, str(src_nodata), str(dst_nodata), bands))
+    print('src projection: %s, src nodata: %s, #bands: %d' % (src_projection, str(src_nodata), bands))
 
     # Reprojection if needed 
     if src_projection != '3857':
