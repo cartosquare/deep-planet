@@ -81,17 +81,18 @@ sudo apt-get install python-mapnik
 
 
 ## 成果
-## 湛江市道路分割
-### rapideye卫星 rgb波段 tif
+## 道路分割
+### 湛江市 rapideye卫星 rgb波段 tif
 Global acc = 0.98796 Class average acc = 0.72592 Mean Int over Union = 0.64794
 
-## 北京市道路分割
-### rapideye卫星 rgb波段 缩放png
-Global acc = 0.98006 Class average acc = 0.83417 Mean Int over Union = 0.6132
+### 北京市 rapideye卫星 rgb波段 png
+Global acc = 0.957566, Class average acc = 0.910762, Mean Int over Union = 0.563256
 
 ## 生态分割
 ### 高分二号卫星 4 3 2假彩色合成 缩放png
 Global acc = 0.781321, Class average acc = 0.913746, Mean Int over Union = 0.748480
+### rapideye卫星 5波段 + dem + 坡度 + 坡向 tif
+
 
 ## 河流分割
 ### LandSat卫星 5 6 4 波段合成，缩放png
