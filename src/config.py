@@ -208,7 +208,10 @@ class DeepPlanetConfig:
 		# log文件
 		self.log_file = '%s/log.txt' % self.data_root
 
-		###################### 和训练样本相关的变量 ###############################
+		# nodata value 
+		# could not less than 0, because our datatype is UInt16
+		self.nodata = 0
+ 		###################### 和训练样本相关的变量 ###############################
 		# 训练网络
 		self.model_dir = 'models'
 		self.solver = '%s/segnet_solver.prototxt' % self.model_dir
@@ -245,6 +248,9 @@ class DeepPlanetConfig:
 		#********************************   影像样本准备时涉及的参数  **************************
 		# 原始影像所在的目录
 		self.src_tifs = '%s/tifs' % self.data_root
+
+		# 统一nodata值后的目录
+		self.samenodata_dir = '%s/samenodata_tifs' % self.data_root
 
 		# 投影为 web 墨卡托的影像所在的目录
 		self.tifs_3857 = '%s/tifs_3857' % self.data_root

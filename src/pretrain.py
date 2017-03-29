@@ -81,27 +81,31 @@ def get_epsg(src_dir):
     return epsg_code
 
 
-def get_nodata(src_dir):
-    log(flog, 'fetch nodata value from %s'% src_dir)
+def convert_nodata(src_dir):
+    log(flog, 'convert nodata from %s to %s' % (src_dir, config.samenodata_dir))
+    if not os.path.exists(config.samenodata_dir):
+        os.mkdir(config.samenodata_dir)
+
     files = os.listdir(src_dir)
-    nodata = None
-    status = True
     for file in files:
         if is_tiff(file):
             file_path = os.path.join(src_dir, file)
+
+            # check nodata value
             dataset = gdal.Open(str(file_path), gdal.GA_ReadOnly)
-            
-            band = dataset.GetRasterBand(1)
-            if nodata is None:
-                nodata = band.GetNoDataValue()
-                log(flog, 'find nodata %s' % str(nodata))
-            else:
-                if nodata != band.GetNoDataValue():
-                    log(flog, 'nodata value must keep same in %s, old %s, new %s, new file %s' % (src_dir, str(nodata), str(band.GetNoDataValue()), file_path))
-                    # todo convert to keep same
-                    status = False
-                    
-    return nodata, status
+            band_num = dataset.RasterCount
+            for i in range(band_num):
+                band = dataset.GetRasterBand(1)
+                if band.GetNoDataValue() is None:
+                    log(flog, 'warning, source tifs nodata not set, treat 0 as nodata!')
+                    break
+
+            new_file_path = os.path.join(config.samenodata_dir, file)
+            command = '%s -dstnodata %d %s %s' % (os.path.join(bundle_dir, 'gdalwarp'), config.nodata,file_path, new_file_path)
+            print command
+            if not execute_system_command(command):
+                return False
+    return True
 
 def get_bands(src_dir):
     log(flog, 'fetch band information from %s'% src_dir)
@@ -1104,19 +1108,22 @@ if __name__=='__main__':
         log(flog, 'source tifs has no projection find! exist ...')
         sys.exit()
 
-    ## get nodata value from source tifs
-    src_nodata, status = get_nodata(config.src_tifs)
-    if not status:
-        log(flog, 'multify nodata files found, exit ...')
-        sys.exit()
-        
-    dst_nodata = src_nodata
-    if config.image_type == 'png' or src_nodata is None:
-        dst_nodata = 0
-        
+    ## convert nodata value from source tifs
+    if not os.path.exists(config.samenodata_dir):
+        status = convert_nodata(config.src_tifs)
+        if not status:
+            log(flog, 'convert nodata fail, exit ...')
+            sys.exit()
+    
+    # because source nodata is always 0!!!
+    dst_nodata = 0
+
+    # change working directory
+    config.src_tifs = config.samenodata_dir
+
     ## get bands info
     bands = get_bands(config.src_tifs)
-    print('src projection: %s, src nodata: %s, #bands: %d' % (src_projection, str(src_nodata), bands))
+    print('src projection: %s, #bands: %d' % (src_projection, bands))
 
     # Reprojection if needed 
     if src_projection != '3857':

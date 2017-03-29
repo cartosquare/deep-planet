@@ -66,6 +66,7 @@ sudo apt-get install python-pip
 ```
 pip install -U scikit-image
 ```
+maybe in centos you need to use `sudo`
 
 * progressbar
 ```
@@ -153,4 +154,10 @@ else:
 fontscollectionpath = os.path.normpath('/usr/share/fonts')
 __all__ = [mapniklibpath,inputpluginspath,fontscollectionpath]
 ```
+
+## About building on Centos
+## compiling mapnik is not so easy
+first compile [mapnik](https://github.com/mapnik/mapnik/blob/master/INSTALL.md) from source
+then compile [python-mapnik](https://github.com/mapnik/python-mapnik/tree/v3.0.x) from source
+good luck~
 
