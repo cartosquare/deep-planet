@@ -85,6 +85,7 @@ def get_nodata(src_dir):
     log(flog, 'fetch nodata value from %s'% src_dir)
     files = os.listdir(src_dir)
     nodata = None
+    status = True
     for file in files:
         if is_tiff(file):
             file_path = os.path.join(src_dir, file)
@@ -96,10 +97,11 @@ def get_nodata(src_dir):
                 log(flog, 'find nodata %s' % str(nodata))
             else:
                 if nodata != band.GetNoDataValue():
-                    log(flog, 'nodata value must keep same in %s, old %s, new %s' % (src_dir, str(nodata), str(band.GetNoDataValue())))
+                    log(flog, 'nodata value must keep same in %s, old %s, new %s, new file %s' % (src_dir, str(nodata), str(band.GetNoDataValue()), file_path))
                     # todo convert to keep same
-
-    return nodata
+                    status = False
+                    
+    return nodata, status
 
 def get_bands(src_dir):
     log(flog, 'fetch band information from %s'% src_dir)
@@ -1103,7 +1105,11 @@ if __name__=='__main__':
         sys.exit()
 
     ## get nodata value from source tifs
-    src_nodata = get_nodata(config.src_tifs)
+    src_nodata, status = get_nodata(config.src_tifs)
+    if not status:
+        log(flog, 'multify nodata files found, exit ...')
+        sys.exit()
+        
     dst_nodata = src_nodata
     if config.image_type == 'png' or src_nodata is None:
         dst_nodata = 0
