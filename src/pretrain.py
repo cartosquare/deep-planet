@@ -140,7 +140,7 @@ def reproj(src_dir, src_proj, dest_dir):
         command = '%s -s_srs EPSG:%s -t_srs EPSG:3857 -r bilinear %s %s' % (os.path.join(bundle_dir, 'gdalwarp'), src_proj, file_path, projected_file_path)
         print(command)
         if not execute_system_command(command):
-            log(flog, 'command %s fail' % command)
+            log(flog, 'command %s fail!' % command)
             return False
     return True
 
@@ -196,8 +196,8 @@ def build_overview(work_dir):
 
 		    command = "%s -r gauss -ro %s 2 4 8 16" % (os.path.join(bundle_dir, 'gdaladdo'), os.path.join(parent, file))
 		    print command
-		    if not execute_system_command(command):
-                log(flog, 'command %s fail' % (command))
+		    status = execute_system_command(command)
+            if not status:
                 return False
     return True
 
