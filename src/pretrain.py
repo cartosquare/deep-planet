@@ -193,7 +193,10 @@ def build_overview(work_dir):
 
 		    command = "%s -r gauss -ro %s 2 4 8 16" % (os.path.join(bundle_dir, 'gdaladdo'), os.path.join(parent, file))
 		    print command
-		    return execute_system_command(command)
+		    if not execute_system_command(command):
+                log(flog, 'command %s fail' % command)
+                return False
+    return True
 
 
 def build_file_overview(file):
