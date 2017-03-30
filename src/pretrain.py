@@ -1147,7 +1147,7 @@ if __name__=='__main__':
         log(flog, 'no projection progress need.')
         projected_dir = config.src_tifs
     
-    if config.process_analyze and not os.path.exists(config.analyze_tiles_dir):
+    if config.process_analyze:
         # Fetch bands for analyze
         if len(config.analyze_bands) == 0:
             ## use all bands for analyze
@@ -1226,7 +1226,7 @@ if __name__=='__main__':
         log(flog, 'skip analyze progress ...')
 
 
-    if config.process_visualize and not os.path.exists(config.visualize_tiles_dir):
+    if config.process_visualize:
         if len(config.visualize_bands) == 0:
             # use first 3 bands for visualize
             if bands < 3:
@@ -1285,12 +1285,9 @@ if __name__=='__main__':
         ## generate html pages to visualize tiles
         generate_pages('visualize')
         # tiler
-        if not os.path.exists(config.visualize_tiles_dir):
-            if not tiler_png(config.merged_visualize_file, config.visualize_tiles_dir, str(config.visualize_level)):
-                log(flog, 'tiler png fail, exit ...')
-                sys.exit()
-        else:
-            log(flog, 'skip tiler visualize tiles progress ...')
+        if not tiler_png(config.merged_visualize_file, config.visualize_tiles_dir, str(config.visualize_level)):
+            log(flog, 'tiler png fail, exit ...')
+            sys.exit()
 
     
     if config.mode == 'predict':
