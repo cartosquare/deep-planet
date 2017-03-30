@@ -319,7 +319,7 @@ def flatten_google_dir(out, level):
 def tiler_png(src, out, level):
     log(flog, 'tilering png level %s, from %s to %s ...' % (str(level), src, out))
     create_directory_if_not_exist(out)
-    command = "gdal2tiles.py -s epsg:3857 -a %s -e -z %s %s %s" % (str(config.nodata), level, src, out)
+    command = "gdal2tiles.py -s epsg:3857 -a %s -e -w none -z %s %s %s" % (str(config.nodata), level, src, out)
     print command
     argv = gdal.GeneralCmdLineProcessor(command.split())
     gdal2tiles = GDAL2Tiles(argv[1:])
