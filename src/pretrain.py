@@ -1213,8 +1213,6 @@ if __name__=='__main__':
         
         # Delete invalid training tiles
         rm_invalid_tiles(config.analyze_tiles_dir, config.image_type, config.mode)
-        else:
-            log(flog, 'skip tiler tiles and remove invalid tiles progress ...')
     else:
         log(flog, 'skip analyze progress ...')
 
