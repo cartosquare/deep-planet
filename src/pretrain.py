@@ -139,7 +139,10 @@ def reproj(src_dir, src_proj, dest_dir):
 
         command = '%s -s_srs EPSG:%s -t_srs EPSG:3857 -r bilinear %s %s' % (os.path.join(bundle_dir, 'gdalwarp'), src_proj, file_path, projected_file_path)
         print(command)
-        return execute_system_command(command)
+        if not execute_system_command(command):
+            log(flog, 'command %s fail' % command)
+            return False
+    return True
 
 
 def fetch_bands(src_dir, dest_dir, band_list, encode_type, image_type):
