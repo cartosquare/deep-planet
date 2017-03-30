@@ -165,7 +165,10 @@ def fetch_bands(src_dir, dest_dir, band_list, encode_type, image_type):
             # visualize or analyze but using png
             command = '%s -scale -ot Byte -co COMPRESS=JPEG -co JPEG_QUALITY=100 %s %s %s' % (os.path.join(bundle_dir, 'gdal_translate'), file_path, fetched_file_path, band_str)
         print command
-        return execute_system_command(command)
+        if not execute_system_command(command):
+            log(flog, 'command %s fail' % command)
+            return False
+    return True
 
 def execute_system_command(command):
     try:
