@@ -268,12 +268,15 @@ def tiler_tif(src, out):
                 maxy = maxy + mercator.Resolution(tz) * config.overlap
                 tile_size = config.image_dim + config.overlap
 
-            command = "%s -of GTiff -te %s %s %s %s -ts %d %d -r near -multi -q %s %s" % (os.path.join(bundle_dir, 'gdalwarp'), format(minx, '.10f'), format(miny, '.10f'), format(maxx, '.10f'), format(maxy, '.10f'), tile_size, tile_size, src, tilepath)
+            if not os.path.exists(tilepath):
+                command = "%s -of GTiff -te %s %s %s %s -ts %d %d -r near -multi -q %s %s" % (os.path.join(bundle_dir, 'gdalwarp'), format(minx, '.10f'), format(miny, '.10f'), format(maxx, '.10f'), format(maxy, '.10f'), tile_size, tile_size, src, tilepath)
             
-            #print command
-            status  = execute_system_command(command)
-            if not status:
-                return False
+                #print command
+                status  = execute_system_command(command)
+                if not status:
+                    log('process %s fail!' % (tilepath))
+                    # not break the whole time consuming process !!!
+                    #return False
     return True
                 
 
@@ -307,10 +310,7 @@ def flatten_google_dir(out, level):
 def tiler_png(src, out, level):
     log(flog, 'tilering png level %s, from %s to %s ...' % (str(level), src, out))
     create_directory_if_not_exist(out)
-    if src_nodata is None:
-        command = "gdal2tiles.py -s epsg:3857 -z %s %s %s" % (level, src, out)
-    else:
-        command = "gdal2tiles.py -s epsg:3857 -a %s -z %s %s %s" % (str(src_nodata), level, src, out)
+    command = "gdal2tiles.py -s epsg:3857 -a %s -e -z %s %s %s" % (str(config.nodata), level, src, out)
     print command
     argv = gdal.GeneralCmdLineProcessor(command.split())
     gdal2tiles = GDAL2Tiles(argv[1:])
@@ -1202,18 +1202,17 @@ if __name__=='__main__':
         generate_pages('analyze')
 
         ## tiler
-        if not os.path.exists(config.analyze_tiles_dir):
-            if config.image_type == 'tif':
-                if not tiler_tif(config.merged_analyze_file, config.analyze_tiles_dir):
-                    log(flog, 'tiler tif fail, exit ...')
-                    sys.exit()
-            else:
-                if not tiler_png(config.merged_analyze_file, config.analyze_tiles_dir, str(config.tile_level)):
-                    log(flog, 'tiler png fail, exit ...')
-                    sys.exit()
+        if config.image_type == 'tif':
+            if not tiler_tif(config.merged_analyze_file, config.analyze_tiles_dir):
+                log(flog, 'tiler tif fail, exit ...')
+                sys.exit()
+        else:
+            if not tiler_png(config.merged_analyze_file, config.analyze_tiles_dir, str(config.tile_level)):
+                log(flog, 'tiler png fail, exit ...')
+                sys.exit()
         
-            # Delete invalid training tiles
-            rm_invalid_tiles(config.analyze_tiles_dir, config.image_type, config.mode)
+        # Delete invalid training tiles
+        rm_invalid_tiles(config.analyze_tiles_dir, config.image_type, config.mode)
         else:
             log(flog, 'skip tiler tiles and remove invalid tiles progress ...')
     else:
