@@ -1214,19 +1214,18 @@ if __name__=='__main__':
         generate_pages('analyze')
 
         ## tiler
-        if config.image_type == 'tif':
-            if not os.path.exists(config.analyze_tiles_dir):
+        if not os.path.exists(config.analyze_tiles_dir):
+            if config.image_type == 'tif':
                 if not tiler_tif(config.merged_analyze_file, config.analyze_tiles_dir):
                     log(flog, 'tiler tif fail, exit ...')
                     sys.exit()
-        else:
-            if not os.path.exists(config.analyze_tiles_dir):
+            else:
                 if not tiler_png(config.merged_analyze_file, config.analyze_tiles_dir, str(config.tile_level)):
                     log(flog, 'tiler png fail, exit ...')
                     sys.exit()
         
-        # Delete invalid training tiles
-        rm_invalid_tiles(config.analyze_tiles_dir, config.image_type, config.mode)
+            # Delete invalid training tiles
+            rm_invalid_tiles(config.analyze_tiles_dir, config.image_type, config.mode)
     else:
         log(flog, 'skip analyze progress ...')
 
