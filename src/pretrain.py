@@ -908,7 +908,7 @@ def calculate_weights():
             for j in range(0, config.image_dim): 
                 if config.ignore_background and img[i][j] == nclass:
                     continue
-                    
+
                 class_info[img[i][j]]['pixels'] = class_info[img[i][j]]['pixels'] + 1
                 if not class_in_file[img[i][j]]:
                     class_info[img[i][j]]['files'] = class_info[img[i][j]]['files'] + 1
@@ -1215,13 +1215,15 @@ if __name__=='__main__':
 
         ## tiler
         if config.image_type == 'tif':
-            if not tiler_tif(config.merged_analyze_file, config.analyze_tiles_dir):
-                log(flog, 'tiler tif fail, exit ...')
-                sys.exit()
+            if not os.path.exists(config.analyze_tiles_dir):
+                if not tiler_tif(config.merged_analyze_file, config.analyze_tiles_dir):
+                    log(flog, 'tiler tif fail, exit ...')
+                    sys.exit()
         else:
-            if not tiler_png(config.merged_analyze_file, config.analyze_tiles_dir, str(config.tile_level)):
-                log(flog, 'tiler png fail, exit ...')
-                sys.exit()
+            if nos os.path.exists(config.analyze_tiles_dir):
+                if not tiler_png(config.merged_analyze_file, config.analyze_tiles_dir, str(config.tile_level)):
+                    log(flog, 'tiler png fail, exit ...')
+                    sys.exit()
         
         # Delete invalid training tiles
         rm_invalid_tiles(config.analyze_tiles_dir, config.image_type, config.mode)
