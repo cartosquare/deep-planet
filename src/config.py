@@ -210,7 +210,10 @@ class DeepPlanetConfig:
 
 		# nodata value 
 		# could not less than 0, because our datatype is UInt16
-		self.nodata = 0
+		if 'nodata' in pobject:
+			self.nodata = pobject['nodata']
+		else:
+			self.nodata = 0
  		###################### 和训练样本相关的变量 ###############################
 		# 训练网络
 		self.model_dir = 'models'
