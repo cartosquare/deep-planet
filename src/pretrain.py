@@ -1220,7 +1220,7 @@ if __name__=='__main__':
                     log(flog, 'tiler tif fail, exit ...')
                     sys.exit()
         else:
-            if nos os.path.exists(config.analyze_tiles_dir):
+            if not os.path.exists(config.analyze_tiles_dir):
                 if not tiler_png(config.merged_analyze_file, config.analyze_tiles_dir, str(config.tile_level)):
                     log(flog, 'tiler png fail, exit ...')
                     sys.exit()
