@@ -906,6 +906,9 @@ def calculate_weights():
 
         for i in range(0, config.image_dim):
             for j in range(0, config.image_dim): 
+                if config.ignore_background and img[i][j] == nclass:
+                    continue
+                    
                 class_info[img[i][j]]['pixels'] = class_info[img[i][j]]['pixels'] + 1
                 if not class_in_file[img[i][j]]:
                     class_info[img[i][j]]['files'] = class_info[img[i][j]]['files'] + 1
