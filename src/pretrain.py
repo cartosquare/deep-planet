@@ -885,8 +885,10 @@ def calculate_weights():
     # class, pixels, files
     nclass = config.classes
     class_info = []
+    class_in_file = []
     for i in range(0, nclass):
         class_info.append({'pixels': 0, 'files': 0})
+        class_in_file.append(False)
 
     print '#class', len(class_info)
 
@@ -897,13 +899,7 @@ def calculate_weights():
             count = count + 1
             continue
 
-        #img_file = os.path.join(image_dir, img)
         img = io.imread(img)
-
-        class_in_file = []
-        for i in range(0, nclass):
-            class_in_file.append(False)
-
         for i in range(0, config.image_dim):
             for j in range(0, config.image_dim): 
                 if config.ignore_background and img[i][j] == nclass:
@@ -919,6 +915,7 @@ def calculate_weights():
             print count, float(count) / float(nimages)
 
     print class_info
+    print class_in_file
 
     class_freq = []
     for i in range(nclass):
