@@ -1328,18 +1328,17 @@ if __name__=='__main__':
     ######## deploy ####################
     if len(config.deploy) >= 1:
         if config.deploy_mode == 'append':
-                deploy()
-            else:
-                # config.deploy_mode == 'stack'
-                if not os.path.exists(config.stack_dir):
-                    deploy_stack()
-
-            ######## calculate weights ##########
-            calculate_weights()
+            deploy()
         else:
-            log(flog, 'skip deploy and calculating weights progress ...')
+            # config.deploy_mode == 'stack'
+            if not os.path.exists(config.stack_dir):
+                deploy_stack()
+
+        ######## calculate weights ##########
+        if not os.path.exists(config.weight_file):
+            calculate_weights()
     else:
-        log(flog, 'skip split train test and deploy progress ...')
+        log(flog, 'skip deploy and calculating weights progress ...')
 
     log(flog, 'finished!')
 
