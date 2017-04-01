@@ -1324,17 +1324,18 @@ if __name__=='__main__':
     else:
         log(flog, 'skip tiler vector tiles, copy labels and grid2image progress ...')
 
-    if config.process_label:
+    if config.process_label and config.process_analyze:
         ######## split train test ##########
         split_train_test(config.analyze_tiles_dir, config.labels_dir, config.train_txt, config.test_txt)
 
-        ######## deploy ####################
-        if len(config.deploy) >= 1:
-            if config.deploy_mode == 'append':
+    ######## deploy ####################
+    if len(config.deploy) >= 1:
+        if config.deploy_mode == 'append':
                 deploy()
             else:
                 # config.deploy_mode == 'stack'
-                deploy_stack()
+                if not os.path.exists(config.stack_dir):
+                    deploy_stack()
 
             ######## calculate weights ##########
             calculate_weights()
