@@ -282,18 +282,21 @@ class DeepPlanetConfig:
 		#******************************* 标注样本准备涉及的参数 *************************
 		# 训练标注，shapefile格式，所在的目录
 		self.overlay_dir = '%s/overlay' % self.data_root
+		# label subdirectory list
+		self.label_dirs = []
+		file_list = os.listdir(self.overlay_dir)
+		for file_path in file_list:
+			filename, extension = os.path.splitext(file_path)
+			if extension == '.shp':
+				self.label_dirs.append(filename)
+
 		self.style_file = '%s/style.json' % self.data_root
 		self.lod_file = '%s/lod.json' % self.data_root
 		self.tiler_file = '%s/tiler_config.json' % self.data_root
 
-		# This configure should not be touch!!!
-		# because label_color directory is created by another program!!!
-		# If you change this, change config.json too!!!
-		# 标注切割后所在的目录（rgb）
+		# 标注切割后所在的目录
 		self.overlay_tiles_dir = '%s/labels_grid' % self.data_root
-		# 过滤无效标注后的目录（rgb）
-		self.valid_overlay_tiles_dir = '%s/valid_labels_grid' % self.data_root
-		# rgb标注转换为灰度标注的目录
+		# 标注转换为图片格式所在的目录
 		self.labels_dir = '%s/labels' % self.data_root
 
 		#********************************* 训练样本输出的参数 ***********************

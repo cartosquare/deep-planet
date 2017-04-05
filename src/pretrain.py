@@ -577,149 +577,110 @@ def write_predict_txt(work_dir, file_path, image_type):
                         print img.shape
 
 
-def copy_labels():
-    log(flog, 'copy valid label from %s into %s ...' % (config.overlay_tiles_dir, config.valid_overlay_tiles_dir))
-
-    train_dir = config.analyze_tiles_dir
-    label_old_dir = config.overlay_tiles_dir
-    label_new_dir = config.valid_overlay_tiles_dir
-
-    if not os.path.exists(label_new_dir):
-        print 'saving to ' + label_new_dir
-        os.mkdir(label_new_dir)
-
-    train_files = os.listdir(train_dir)
-
-    total_files = len(train_files)
-    step = total_files / 50
-    print('#trains', len(train_files))
-
-    count = 0
-    for train in train_files:
-        count = count + 1
-        if count % step == 0:
-            print('%d of %d' % (count, total_files))
+def grid2image():
+    log(flog, 'generate image from %s into %s ...' % (config.overlay_tiles_dir, config.labels_dir))
+    if not os.path.exists(config.labels_dir):
+        os.mkdir(config.labels_dir)
         
-        items = train.split('.')
-        if len(items) != 2 or items[1] != config.image_type:
-            print('not valid train file: ' + train)
-            continue
+    train_files = os.listdir(config.analyze_tiles_dir)
 
-        items = items[0].split('_')
-        if (len(items) != 3):
-            print('illegal filename ' + items)
-            continue
-        
-        z = items[0]
-        x = items[1]
-        y = items[2]
+    # progress bar
+    widgets = [Bar('>'), ' ', Percentage(), ' ', Timer(), ' ', ETA()]
+    pbar = ProgressBar(widgets=widgets, maxval=len(train_files)).start()
 
-        label_old_file_path = os.path.join(label_old_dir, '%s_%s_%s.json' % (z, x, y))
-        label_new_file_path = os.path.join(label_new_dir, '%s_%s_%s.json' % (z, x, y))
+    nthreads = multiprocessing.cpu_count() * 2
+    pool = multiprocessing.Pool(processes=nthreads)
 
-        if not os.path.exists(label_old_file_path):
-            print 'not exists: ', label_old_file_path
-            continue
+    for i, _ in enumerate(pool.imap_unordered(proces_label_img, train_files), 1):
+        pbar.update(i)
 
-        shutil.copyfile(label_old_file_path, label_new_file_path)
+    pool.close()
+    pool.join()
+    pbar.finish()
 
 
 def create_utfgrids():
     if not os.path.exists(config.overlay_tiles_dir):
         os.mkdir(config.overlay_tiles_dir)
+    
+    for label_dir_name in config.label_dirs:
+        label_dir = os.path.join(config.overlay_tiles_dir, label_dir_name)
+        if not os.path.exists(label_dir):
+            os.mkdir(label_dir)
+        print('generating grids to %s' % label_dir)
 
-    mercator = globalmaptiles.GlobalMercator()
-    # map
-    m = mapnik.Map(config.image_dim, config.image_dim)
+        mercator = globalmaptiles.GlobalMercator()
+        # map
+        m = mapnik.Map(config.image_dim, config.image_dim)
 
-    # Since grids are `rendered` they need a style
-    s = mapnik.Style()
-    r = mapnik.Rule()
+        # Since grids are `rendered` they need a style
+        s = mapnik.Style()
+        r = mapnik.Rule()
 
-    polygon_symbolizer = mapnik.PolygonSymbolizer()
-    polygon_symbolizer.fill = mapnik.Color('#f2eff9')
-    r.symbols.append(polygon_symbolizer)
+        polygon_symbolizer = mapnik.PolygonSymbolizer()
+        polygon_symbolizer.fill = mapnik.Color('#f2eff9')
+        r.symbols.append(polygon_symbolizer)
 
-    # line_symbolizer = mapnik.LineSymbolizer()
-    # line_symbolizer.stroke = mapnik.Color('#f2eff9')
-    # line_symbolizer.stroke_width = 0.1
-    # r.symbols.append(line_symbolizer)
+        s.rules.append(r)
+        m.append_style('My Style',s)
 
-    s.rules.append(r)
-    m.append_style('My Style',s)
+        shppath = os.path.join(config.overlay_dir, label_dir_name + '.shp')
+        ds = ogr.Open(shppath)
+        layer = ds.GetLayer(0)
+        bbox = layer.GetExtent()
 
-    # layers
-    large_num = 10000000000
-    minx = large_num
-    maxx = -large_num
-    miny = large_num
-    maxy = -large_num
-
-    file_list = os.listdir(config.overlay_dir)
-    for file in file_list:
-        items = file.split('.')
-        if items[-1] == 'shp':
-            shppath = os.path.join(config.overlay_dir, file)
-            ds = ogr.Open(shppath)
-            layer = ds.GetLayer(0)
-            bbox = layer.GetExtent()
-
-            if minx > bbox[0]:
-                minx = bbox[0]
-            if miny > bbox[2]:
-                miny = bbox[2]
-            if maxx < bbox[1]:
-                maxx = bbox[1]
-            if maxy < bbox[3]:
-                maxy = bbox[3]
+        minx = bbox[0]
+        miny = bbox[2]
+        maxx = bbox[1]
+        maxy = bbox[3]
             
-            print('create layer', file)
-            mlayer = mapnik.Layer(str(file))
-            mlayer.datasource = mapnik.Shapefile(file=shppath)
-            mlayer.styles.append('My Style')
+        print('create layer', label_dir_name)
+        mlayer = mapnik.Layer(str(label_dir_name))
+        mlayer.datasource = mapnik.Shapefile(file=shppath)
+        mlayer.styles.append('My Style')
 
-            # check field
-            all_fields = mlayer.datasource.fields()
-            find_field = False
-            for fd in all_fields:
-                if fd == config.class_field:
-                    find_field = True
-            if not find_field:
-                print('not exist class field', config.class_field)
-                return
+        # check field
+        all_fields = mlayer.datasource.fields()
+        find_field = False
+        for fd in all_fields:
+            if fd == config.class_field:
+                find_field = True
+        if not find_field:
+            print('not exist class field', config.class_field)
+            return
 
-            m.layers.append(mlayer)
+        m.layers.append(mlayer)
 
-    print(minx, miny, maxx, maxy)
+        print(minx, miny, maxx, maxy)
 
-    tz = int(config.tile_level)
-    print " * Processing Zoom Level %s" % tz
+        tz = int(config.tile_level)
+        print " * Processing Zoom Level %s" % tz
 
-    tminx, tminy = mercator.MetersToTile(minx, miny, tz)
-    tmaxx, tmaxy = mercator.MetersToTile(maxx, maxy, tz)
-    total_tiles = (tmaxx - tminx + 1) * (tmaxy - tminy + 1)
-    # progress bar
-    widgets = [Bar('>'), ' ', Percentage(), ' ', Timer(), ' ', ETA()]
-    pbar = ProgressBar(widgets=widgets, maxval=total_tiles).start()
-    count = 0
-    for ty in range(tminy, tmaxy+1):
-        for tx in range(tminx, tmaxx+1):
-            count = count + 1
-            pbar.update(count)
+        tminx, tminy = mercator.MetersToTile(minx, miny, tz)
+        tmaxx, tmaxy = mercator.MetersToTile(maxx, maxy, tz)
+        total_tiles = (tmaxx - tminx + 1) * (tmaxy - tminy + 1)
+        # progress bar
+        widgets = [Bar('>'), ' ', Percentage(), ' ', Timer(), ' ', ETA()]
+        pbar = ProgressBar(widgets=widgets, maxval=total_tiles).start()
+        count = 0
+        for ty in range(tminy, tmaxy+1):
+            for tx in range(tminx, tmaxx+1):
+                count = count + 1
+                pbar.update(count)
 
-            ymax = 1 << tz
-            invert_ty = ymax - ty - 1
+                ymax = 1 << tz
+                invert_ty = ymax - ty - 1
 
-            tilefilename = os.path.join(config.overlay_tiles_dir, "%d_%d_%d.json" % (tz, tx, invert_ty))
-            tilebounds = mercator.TileBounds(tx, ty, tz)
+                tilefilename = os.path.join(label_dir, "%d_%d_%d.json" % (tz, tx, invert_ty))
+                tilebounds = mercator.TileBounds(tx, ty, tz)
 
-            box = mapnik.Box2d(*tilebounds)
-            m.zoom_to_box(box)
-            grid = mapnik.Grid(m.width, m.height)
-            mapnik.render_layer(m, grid, layer=0, fields=[str(config.class_field)])
-            utfgrid = grid.encode('utf', resolution=1)
-            with open(tilefilename, 'w') as file:
-                file.write(json.dumps(utfgrid))
+                box = mapnik.Box2d(*tilebounds)
+                m.zoom_to_box(box)
+                grid = mapnik.Grid(m.width, m.height)
+                mapnik.render_layer(m, grid, layer=0, fields=[str(config.class_field)])
+                utfgrid = grid.encode('utf', resolution=1)
+                with open(tilefilename, 'w') as file:
+                    file.write(json.dumps(utfgrid))
 
 
 def decode_id(codepoint):
@@ -744,74 +705,47 @@ def resolve(grid, row, col):
 
 def proces_label_img(tile):
     # check file type
-    items = tile.split('.')
-    if len(items) != 2 or items[1] != 'json':
-        print('not grid file: ', tile)
+    filename, extension = os.path.splitext(tile)
+    if extension != '.tif':
+        print('not tif file: ', tile)
         return
 
-    tile_file = os.path.join(config.valid_overlay_tiles_dir, tile)
-    new_tile_file = os.path.join(config.labels_dir, items[0] + '.png')
-
-    # load grids
-    with open(tile_file) as json_data:
-        try:
-            grid = json.load(json_data)
-        except Exception as identifier:
-            print identifier
-            return
-    
+    new_tile_file = os.path.join(config.labels_dir, filename + '.png')
     img = numpy.zeros((config.image_dim, config.image_dim))
-    for row in range(0, config.image_dim):
-        for col in range(0, config.image_dim):
-            key_val = resolve(grid, row, col)
-
-            find = False
-            if key_val is not None:
-                val = key_val[config.class_field]
-                for k in range(0, len(config.class_names)):
-                    if val == config.class_names[k]:
-                        img[row][col] = k
-                        find = True
-                        break
-            if not find:
-                # set to backgournd class
-                img[row][col] = config.background_class
-    
     img = img.astype(int)
+
+    for label_dir_name in config.label_dirs:
+        tile_file = os.path.join(config.overlay_tiles_dir, label_dir_name, filename + '.json')
+        if not os.path.exists(tile_file):
+            continue
+
+        # load grids
+        with open(tile_file) as json_data:
+            try:
+                grid = json.load(json_data)
+            except Exception as identifier:
+                print identifier
+                return
+    
+        for row in range(0, config.image_dim):
+            for col in range(0, config.image_dim):
+                if img[row][col] != 0:
+                    continue
+
+                key_val = resolve(grid, row, col)
+                find = False
+                if key_val is not None:
+                    val = key_val[config.class_field]
+                    for k in range(0, len(config.class_names)):
+                        if val == config.class_names[k]:
+                            img[row][col] = k
+                            find = True
+                            break
+                if not find:
+                    # set to backgournd class
+                    img[row][col] = config.background_class
+    
     io.imsave(new_tile_file, img)
-
-
-def grid2image():
-    log(flog, 'convert grids from %s into image %s ...' % (config.valid_overlay_tiles_dir, config.labels_dir))
-
-    color_dir = config.valid_overlay_tiles_dir
-    gray_dir = config.labels_dir
-
-    if not os.path.exists(gray_dir):
-        print 'saving to ' + gray_dir
-        os.mkdir(gray_dir)
-
-    tiles = os.listdir(color_dir)
-
-    # progress bar
-    widgets = [Bar('>'), ' ', Percentage(), ' ', Timer(), ' ', ETA()]
-    pbar = ProgressBar(widgets=widgets, maxval=len(tiles)).start()
-
-    # cnt = 0
-    # for tile in tiles:
-    #     proces_label_img(tile)
-    #     cnt = cnt + 1
-    #     pbar.update(cnt)
-
-    nthreads = multiprocessing.cpu_count()
-    pool = multiprocessing.Pool(processes=nthreads)
-
-    for i, _ in enumerate(pool.imap_unordered(proces_label_img, tiles), 1):
-        pbar.update(i)
-
-    pool.close()
-    pool.join()
-    pbar.finish()
 
 
 def split_train_test(train_dir, label_dir, train_file, test_file):
@@ -1310,10 +1244,7 @@ if __name__=='__main__':
             create_utfgrids()
         else:
             log(flog, 'skip tiler_overlay progress ...')
-        if not os.path.exists(config.valid_overlay_tiles_dir):
-            copy_labels()
-        else:
-            log(flog, 'skip copy_labels progress ...')
+
         if not os.path.exists(config.labels_dir):
             grid2image()
         else:
