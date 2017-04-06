@@ -916,11 +916,6 @@ def deploy_stack():
                 command = 'gdal_merge.py -separate %s -o %s' % (tile_str, output_file)
                 gdal_merge.main(command.split())
 
-    # generate train test list
-    train_txt = '%s/train.txt' % config.deploy_dir
-    test_txt = '%s/test.txt' % config.deploy_dir
-    split_train_test(config.stack_dir, config.labels_dir, train_txt, test_txt)
-
 
 def deploy():
     log(flog, 'deploy dataset %s to %s ...' % (str(config.deploy), config.deploy_dir))
@@ -1264,7 +1259,12 @@ if __name__=='__main__':
             # config.deploy_mode == 'stack'
             if not os.path.exists(config.stack_dir):
                 deploy_stack()
-
+                
+            # generate train test list
+            train_txt = '%s/train.txt' % config.deploy_dir
+            test_txt = '%s/test.txt' % config.deploy_dir
+            split_train_test(config.stack_dir, config.labels_dir, train_txt, test_txt)
+        
         ######## calculate weights ##########
         if not os.path.exists(config.weight_file):
             calculate_weights()
