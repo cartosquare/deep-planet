@@ -819,11 +819,8 @@ def calculate_weights():
     # class, pixels, files
     nclass = config.classes
     class_info = []
-    class_in_file = []
     for i in range(0, nclass):
         class_info.append({'pixels': 0, 'files': 0})
-        class_in_file.append(False)
-
     print '#class', len(class_info)
 
     nimages = len(images)
@@ -832,6 +829,10 @@ def calculate_weights():
         if not is_png(img):
             count = count + 1
             continue
+
+        class_in_file = []
+        for i in range(0, nclass):
+            class_in_file.append(False)
 
         img = io.imread(img)
         for i in range(0, config.image_dim):
@@ -849,7 +850,6 @@ def calculate_weights():
             print count, float(count) / float(nimages)
 
     print class_info
-    print class_in_file
 
     class_freq = []
     for i in range(nclass):
