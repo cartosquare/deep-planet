@@ -140,6 +140,11 @@ class DeepPlanetConfig:
 		else:
 			self.test_iter = None
 
+		if 'substract_mean' in pobject:
+			self.substract_mean = pobject['substract_mean']
+		else:
+			self.substract_mean = False
+			
 		# 类别标签
 		if 'class_names' in pobject:
 			self.class_names = pobject['class_names']

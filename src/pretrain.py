@@ -1311,7 +1311,7 @@ if __name__=='__main__':
         if not os.path.exists(config.weight_file):
             calculate_weights()
             
-        if not os.path.exists(config.mean_file):
+        if config.substract_mean and not os.path.exists(config.mean_file):
             compute_mean()
     else:
         log(flog, 'skip deploy and calculating weights progress ...')

@@ -20,6 +20,7 @@
     "gpu": "[bool], use which gpu",
     "batch_size": "[int], batch size when training. default to 6",
     "max_iter": "[int], max training iters, default to 400000",
+    "substract_mean": "[bool], whether to calculate mean value of each channel, default to False.",
     "class_names": "[array], class names, how many class names here indicts how manay classes, and each class is represented by its array index. There is an extra class, namely background class exists. You can choose to ignore this class by using ignore_background option",
     "class_colors": "[array], color of each class, e.g. [[r,g,b,a],[r,g,b,a], default to random generated colors"
 }

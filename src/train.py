@@ -73,14 +73,15 @@ def gen_train_file():
                     ftrain.write('    batch_size: %d\n' % (config.batch_size))
                     ftrain.write('    shuffle: true\n')
                     ftrain.write('  }\n')
-
-                with open(config.mean_file, 'r') as f:
-                    ftrain.write('  transform_param {\n')
-                    for line in f:
-                        mean_values = line.strip().split()
-                        for mean_val in mean_values:
-                            ftrain.write('    mean_value: %f\n' % float(mean_val))
-                    ftrain.write('  }\n')
+                
+                if config.substract_mean:
+                    with open(config.mean_file, 'r') as f:
+                        ftrain.write('  transform_param {\n')
+                        for line in f:
+                            mean_values = line.strip().split()
+                            for mean_val in mean_values:
+                                ftrain.write('    mean_value: %f\n' % float(mean_val))
+                        ftrain.write('  }\n')
 
             if len(items) == 2 and items[0] == 'name' and items[1] == ' "conv1_1_D"':
                 ftrain.write('  type: "Convolution"\n')
@@ -142,13 +143,14 @@ def gen_infence_file(mode):
                     ftrain.write('    batch_size: 1\n')
                     ftrain.write('  }\n')
 
-                with open(config.mean_file, 'r') as f:
-                    ftrain.write('  transform_param {\n')
-                    for line in f:
-                        mean_values = line.strip().split()
-                        for mean_val in mean_values:
-                            ftrain.write('    mean_value: %f\n' % float(mean_val))
-                    ftrain.write('  }\n')
+                if config.substract_mean:
+                    with open(config.mean_file, 'r') as f:
+                        ftrain.write('  transform_param {\n')
+                        for line in f:
+                            mean_values = line.strip().split()
+                            for mean_val in mean_values:
+                                ftrain.write('    mean_value: %f\n' % float(mean_val))
+                        ftrain.write('  }\n')
                     
             if len(items) == 2 and items[0] == 'name' and items[1] == ' "conv1_1_D"':
                 ftrain.write('  type: "Convolution"\n')
