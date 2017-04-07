@@ -209,6 +209,16 @@ void DataTransformer<Dtype>::Transform(const vector<Datum> & datum_vector,
         CHECK_EQ(width, img_width);
         CHECK_GE(num, 1);
         
+        const bool has_mean_values = mean_values_.size() > 0;
+        if (has_mean_values) {
+            CHECK(mean_values_.size() == img_channels) <<
+            "Specify or as many mean_values as channels: " << img_channels;
+            for (int i = 0; i < mean_values_.size(); ++i) {
+                LOG(INFO) << i << "-th mean values is: " << mean_values_[i];
+            }
+        }
+        
+        
         // maybe check the data type?
         GDALDataType datatype = geotiff->GetRasterBand(1)->GetRasterDataType();
         CHECK_EQ(datatype, GDT_UInt16);
@@ -228,7 +238,11 @@ void DataTransformer<Dtype>::Transform(const vector<Datum> & datum_vector,
                 for (int w = 0; w < width; ++w) {
                     top_index = (c * height + h) * width + w;
                     Dtype pixel = static_cast<Dtype>(scanline[w]);
-                    transformed_data[top_index] = pixel;
+                    if (has_mean_values) {
+                        transformed_data[top_index] = pixel - mean_values_[c];
+                    } else {
+                        transformed_data[top_index] = pixel;
+                    }
                 }
             }
         }

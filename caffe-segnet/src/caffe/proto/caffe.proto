@@ -549,7 +549,8 @@ message DenseTiffDataParameter {
     // Whether or not ImageLayer should shuffle the list of files at every epoch.
     optional bool shuffle = 4 [default = false];
     
-    optional string mean_file = 5;
+    //optional string mean_file = 5;
+    repeated float mean_value = 5;
     optional string root_folder = 6 [default = ""];
 }
 
