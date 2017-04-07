@@ -94,8 +94,8 @@ def convert_nodata(src_dir):
             # check nodata value
             dataset = gdal.Open(str(file_path), gdal.GA_ReadOnly)
             band_num = dataset.RasterCount
-            for i in range(band_num):
-                band = dataset.GetRasterBand(1)
+            for i in range(1, band_num + 1):
+                band = dataset.GetRasterBand(i)
                 if band.GetNoDataValue() is None:
                     log(flog, 'warning, source tifs nodata not set, treat 0 as nodata!')
                     break
@@ -950,6 +950,48 @@ def deploy():
     ftest.close()
 
 
+def compute_mean():
+    train_txt = '%s/train.txt' % config.deploy_dir
+    test_txt = '%s/test.txt' % config.deploy_dir
+
+    data_sum = []
+    for i in range(0, len(config.analyze_bands)):
+        data_sum.append(0.0)
+
+    cnt = 0
+    with open(train_txt, 'r') as f:
+        for line in f:
+            file_path = line.strip().split()[0]
+            dataset = gdal.Open(str(file_path), gdal.GA_ReadOnly)
+            band_num = dataset.RasterCount
+            for i in range(1, band_num + 1):
+                band = dataset.GetRasterBand(i)
+                data = band.ReadAsArray()
+                data_sum[i - 1] = numpy.average(data) + data_sum[i - 1]
+            cnt = cnt + 1
+
+    with open(test_txt, 'r') as f:
+        for line in f:
+            file_path = line.strip().split()[0]
+            dataset = gdal.Open(str(file_path), gdal.GA_ReadOnly)
+            band_num = dataset.RasterCount
+            for i in range(1, band_num + 1):
+                band = dataset.GetRasterBand(i)
+                data = band.ReadAsArray()
+                data_sum[i - 1] = numpy.average(data) + data_sum[i - 1]
+            cnt = cnt + 1
+
+    for i in range(0, len(data_sum)):
+        data_sum[i] = float(data_sum[i]) / float(cnt)
+
+    print data_sum
+    with open(config.mean_file, 'w') as f:
+        for i in range(0, len(data_sum)):
+            if i != 0:
+                f.write('\t')
+            f.write(data_sum[i])
+
+
 def parseOptions(config_file):
     with open(config_file) as json_data:
         d = json.load(json_data)
@@ -1268,6 +1310,9 @@ if __name__=='__main__':
         ######## calculate weights ##########
         if not os.path.exists(config.weight_file):
             calculate_weights()
+            
+        if nos os.path.exists(config.mean_file):
+            compute_mean()
     else:
         log(flog, 'skip deploy and calculating weights progress ...')
 

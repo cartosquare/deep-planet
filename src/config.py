@@ -248,6 +248,8 @@ class DeepPlanetConfig:
 		# 分类权重
 		self.weight_file = '%s/weights.txt' % self.deploy_dir
 
+		# mean file
+		self.mean_file = '%s/means.txt' % self.deploy_dir
 		#********************************   影像样本准备时涉及的参数  **************************
 		# 原始影像所在的目录
 		self.src_tifs = '%s/tifs' % self.data_root
