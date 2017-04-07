@@ -724,8 +724,8 @@ def proces_label_img(tile):
             try:
                 grid = json.load(json_data)
             except Exception as identifier:
-                print identifier
-                return
+                log(flog, 'open %s fail!' % (tile_file))
+                continue
     
         for row in range(0, config.image_dim):
             for col in range(0, config.image_dim):
@@ -733,17 +733,17 @@ def proces_label_img(tile):
                     continue
 
                 key_val = resolve(grid, row, col)
-                find = False
                 if key_val is not None:
+                    find = False
                     val = key_val[config.class_field]
                     for k in range(0, len(config.class_names)):
                         if val == config.class_names[k]:
                             img[row][col] = k
                             find = True
                             break
-                if not find:
-                    # set to backgournd class
-                    img[row][col] = config.background_class
+                    if not find:
+                        # set to backgournd class
+                        img[row][col] = config.background_class
     
     io.imsave(new_tile_file, img)
 
