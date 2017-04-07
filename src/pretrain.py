@@ -989,7 +989,7 @@ def compute_mean():
         for i in range(0, len(data_sum)):
             if i != 0:
                 f.write('\t')
-            f.write(data_sum[i])
+            f.write('%f' % data_sum[i])
 
 
 def parseOptions(config_file):
@@ -1311,7 +1311,7 @@ if __name__=='__main__':
         if not os.path.exists(config.weight_file):
             calculate_weights()
             
-        if nos os.path.exists(config.mean_file):
+        if not os.path.exists(config.mean_file):
             compute_mean()
     else:
         log(flog, 'skip deploy and calculating weights progress ...')
