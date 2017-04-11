@@ -1144,8 +1144,9 @@ if __name__=='__main__':
                 log(flog, 'tiler tif fail, exit ...')
                 sys.exit()
         
-            # Delete invalid training tiles
-            rm_invalid_tiles(config.analyze_tiles_dir, config.image_type, config.mode)
+            if config.rm_incomplete_tile:
+                # Delete invalid training tiles
+                rm_invalid_tiles(config.analyze_tiles_dir, config.image_type, config.mode)
     else:
         log(flog, 'skip analyze progress ...')
 
@@ -1209,7 +1210,7 @@ if __name__=='__main__':
         ## generate html pages to visualize tiles
         generate_pages('visualize')
         # tiler
-        if not tiler_png(config.merged_visualize_file, config.visualize_tiles_dir, str(config.visualize_level)):
+        if not tiler(config.merged_visualize_file, config.visualize_tiles_dir):
             log(flog, 'tiler png fail, exit ...')
             sys.exit()
 

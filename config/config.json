@@ -1,8 +1,10 @@
 {
+    "root_dir": "[str], project root directory, default to '.'",
     "mode": "[str], train or predict",
     "process_visualize": "[bool], generate visualize tiles or not",
     "process_analyze": "[bool], generate analyze tiles or not",
     "process_label": "[bool], generate ground truth labels or not",
+    "rm_incomplete_tile": "[bool], delete incomplete tiles or not, default False",
     "tile_level": "[str], resolution level, 0-19",
     "visualize_level": "[str], visualize levels, for example: 10-15",
     "image_type": "[str], could be tif or png",
