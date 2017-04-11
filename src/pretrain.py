@@ -712,6 +712,8 @@ def proces_label_img(tile):
 
     new_tile_file = os.path.join(config.labels_dir, filename + '.png')
     img = numpy.zeros((config.image_dim, config.image_dim))
+    # initial set to background
+    img = img + config.background_class
     img = img.astype(int)
 
     for label_dir_name in config.label_dirs:
@@ -729,21 +731,18 @@ def proces_label_img(tile):
     
         for row in range(0, config.image_dim):
             for col in range(0, config.image_dim):
-                if img[row][col] != 0:
+                # only try to update if this pixel is background 
+                if img[row][col] != config.background_class:
                     continue
 
                 key_val = resolve(grid, row, col)
                 if key_val is not None:
-                    find = False
                     val = key_val[config.class_field]
                     for k in range(0, len(config.class_names)):
                         if val == config.class_names[k]:
+                            # update pixel label
                             img[row][col] = k
-                            find = True
                             break
-                    if not find:
-                        # set to backgournd class
-                        img[row][col] = config.background_class
     
     io.imsave(new_tile_file, img)
 
