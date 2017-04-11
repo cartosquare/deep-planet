@@ -35,11 +35,11 @@ def create_directory_if_not_exist(dir):
 
 def is_tiff(file):
     filename, file_extension = os.path.splitext(file)
-    return (file_extension == '.tif')
+    return (file_extension == '.tif' or file_extension == '.TIF')
 
 def is_png(file):
     filename, file_extension = os.path.splitext(file)
-    return (file_extension == '.png')
+    return (file_extension == '.png' or file_extension == '.PNG')
 
 def tiff_count(src_dir):
     files = os.listdir(src_dir)
