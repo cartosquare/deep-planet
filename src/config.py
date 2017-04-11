@@ -41,6 +41,11 @@ class DeepPlanetConfig:
 		else:
 			self.process_label = True
 
+		if 'rm_incomplete_tile' in pobject:
+			self.rm_incomplete_tile = pobject['rm_incomplete_tile']
+		else:
+			self.rm_incomplete_tile = False
+
 		# 训练样本大小，目前只支持 256px * 256px
 		self.image_dim = 256
 

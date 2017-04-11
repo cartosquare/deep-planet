@@ -51,6 +51,7 @@ def predict():
 
     if config.use_gpu:
         caffe.set_mode_gpu()
+        caffe.set_device(config.gpu)
     else:
         caffe.set_mode_cpu()
 
