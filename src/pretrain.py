@@ -244,7 +244,7 @@ def get_raster_extent(src):
     return (map_minx, map_miny, map_maxx, map_maxy)
 
 
-def tiler_tif(src, out): 
+def tiler(src, out): 
     log(flog, 'tilering level %s, from %s to %s ...' % (config.tile_level, src, out))
     create_directory_if_not_exist(out)
     
@@ -266,7 +266,7 @@ def tiler_tif(src, out):
             ymax = 1 << tz
             invert_ty = ymax - ty - 1
             # ty for TMS bottom origin, invert_ty Use top origin tile scheme (like OSM or GMaps)
-            tilepath = os.path.join(out, "%d_%d_%d.tif" % (tz, tx, invert_ty))
+            tilepath = os.path.join(out, "%d_%d_%d.%s" % (tz, tx, invert_ty, config.image_type))
 
             (minx, miny, maxx, maxy) = mercator.TileBounds(tx, ty, tz)
             if config.mode == 'train':
@@ -278,7 +278,10 @@ def tiler_tif(src, out):
                 tile_size = config.image_dim + config.overlap
 
             if not os.path.exists(tilepath):
-                command = "%s -of GTiff -te %s %s %s %s -ts %d %d -r near -multi -q %s %s" % (os.path.join(bundle_dir, 'gdalwarp'), format(minx, '.10f'), format(miny, '.10f'), format(maxx, '.10f'), format(maxy, '.10f'), tile_size, tile_size, src, tilepath)
+                if config.image_type == 'tif':
+                    command = "%s -of GTiff -te %s %s %s %s -ts %d %d -r near -multi -q %s %s" % (os.path.join(bundle_dir, 'gdalwarp'), format(minx, '.10f'), format(miny, '.10f'), format(maxx, '.10f'), format(maxy, '.10f'), tile_size, tile_size, src, tilepath)
+                else:
+                    command = "%s -of GTiff -co COMPRESS=JPEG -ot Byte -te %s %s %s %s -ts %d %d -r near -multi -q %s %s" % (os.path.join(bundle_dir, 'gdalwarp'), format(minx, '.10f'), format(miny, '.10f'), format(maxx, '.10f'), format(maxy, '.10f'), tile_size, tile_size, src, tilepath)
             
                 #print command
                 status  = execute_system_command(command)
@@ -286,51 +289,6 @@ def tiler_tif(src, out):
                     log('process %s fail!' % (tilepath))
                     # not break the whole time consuming process !!!
                     #return False
-    return True
-                
-
-def flatten_google_dir(out, level):
-    # reorganize files
-    google_tile_dir = os.path.join(out, str(level))
-    xs = os.listdir(google_tile_dir)
-
-    ntiles = 2 ** int(level)
-    for x in xs:
-        if x == '.DS_Store':
-            continue
-
-        x_path = os.path.join(google_tile_dir, x)
-        ys = os.listdir(x_path)
-
-        for y_postfix in ys:
-            y_items = y_postfix.split('.')
-            if len(y_items) != 2 or y_items[1] != 'png':
-                continue
-
-            y = y_items[0]
-            y_flip = int(ntiles - float(y) - 1)
-
-            old_file = os.path.join(x_path, y_postfix)
-            new_file = os.path.join(out, '%s_%s_%d.png' % (level, x, y_flip))
-            shutil.copy(old_file, new_file)
-    #os.rmdir(google_tile_dir)
-    shutil.rmtree(google_tile_dir)
-
-def tiler_png(src, out, level):
-    log(flog, 'tilering png level %s, from %s to %s ...' % (str(level), src, out))
-    create_directory_if_not_exist(out)
-    command = "gdal2tiles.py -s epsg:3857 -a %s -e -w none -z %s %s %s" % (str(config.nodata), level, src, out)
-    print command
-    argv = gdal.GeneralCmdLineProcessor(command.split())
-    gdal2tiles = GDAL2Tiles(argv[1:])
-    gdal2tiles.process()
-
-    level_arr = level.split('-')
-    if len(level_arr) == 1:
-        flatten_google_dir(out, int(level_arr[0]))
-    else:
-        for i in range(int(level_arr[0]), int(level_arr[1]) + 1):
-            flatten_google_dir(out, i)
     return True
 
 
@@ -706,8 +664,8 @@ def resolve(grid, row, col):
 def proces_label_img(tile):
     # check file type
     filename, extension = os.path.splitext(tile)
-    if extension != '.tif':
-        print('not tif file: ', tile)
+    if extension != ('.%s' % (config.image_type)):
+        print('not %s file: %s' % (config.image_type, tile))
         return
 
     new_tile_file = os.path.join(config.labels_dir, filename + '.png')
@@ -1182,14 +1140,9 @@ if __name__=='__main__':
 
         ## tiler
         if not os.path.exists(config.analyze_tiles_dir):
-            if config.image_type == 'tif':
-                if not tiler_tif(config.merged_analyze_file, config.analyze_tiles_dir):
-                    log(flog, 'tiler tif fail, exit ...')
-                    sys.exit()
-            else:
-                if not tiler_png(config.merged_analyze_file, config.analyze_tiles_dir, str(config.tile_level)):
-                    log(flog, 'tiler png fail, exit ...')
-                    sys.exit()
+            if not tiler(config.merged_analyze_file, config.analyze_tiles_dir):
+                log(flog, 'tiler tif fail, exit ...')
+                sys.exit()
         
             # Delete invalid training tiles
             rm_invalid_tiles(config.analyze_tiles_dir, config.image_type, config.mode)
@@ -1260,7 +1213,6 @@ if __name__=='__main__':
             log(flog, 'tiler png fail, exit ...')
             sys.exit()
 
-    
     if config.mode == 'predict':
         if config.image_type == 'tif':
             # already doing overlap, just direct to the folder
