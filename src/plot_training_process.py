@@ -1,9 +1,12 @@
 import os
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+import sys
 
 iterations = []
 acc = []
-with open('./sanxia_2014/segnet_train_log.txt') as f:
+with open(sys.argv[1]) as f:
     count = 0
     for line in f:
         items = line.strip().split()
