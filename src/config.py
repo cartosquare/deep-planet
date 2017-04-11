@@ -12,6 +12,12 @@ import random
 class DeepPlanetConfig:
 	def Initialize(self, pobject):
 		#********************************   通用参数  **********************************
+		# 工程根目录（处理数据的工程目录）
+		if 'root_dir' in pobject:
+			self.root_dir = pobject['root_dir']
+		else:
+			self.root_dir = '.'
+
 		# could be train or predict
 		# when train, tiles with nodata value will be removed
 		# when predict, tiles with nodata will be keeped
@@ -184,15 +190,17 @@ class DeepPlanetConfig:
 			print('#classes: %d, without background_class %d' % (self.classes, self.background_class))
 
 		# 发布训练样本的目录
-		self.deploy_dir = 'output/'
-		if not os.path.exists(self.deploy_dir):
-			os.mkdir(self.deploy_dir)
-
+		self.deploy_root = os.path.join(self.root_dir, 'output')
+		if not os.path.exists(self.deploy_root):
+			os.mkdir(self.deploy_root)
+		
+		self.deploy_dir = ''
 		for i in range(len(self.deploy)):
 			if i == (len(self.deploy) - 1):
 				self.deploy_dir = self.deploy_dir + self.deploy[i]
 			else:
 				self.deploy_dir = self.deploy_dir + self.deploy[i] + '_'
+		self.deploy_dir = os.path.join(self.deploy_root, self.deploy_dir)
 
 		# 不同数据集的影像结合进行训练的两种方式
 		self.deploy_mode = 'append'
@@ -204,7 +212,7 @@ class DeepPlanetConfig:
 			self.deploy_mode = 'append'
 
 		# 处理样本的根目录
-		self.project_dir = 'projects'
+		self.project_dir = os.path.join(self.root_dir, 'projects')
 		self.data_root = '%s/%s' % (self.project_dir, self.data_name)
 		if not os.path.exists(self.data_root):
 			print('%s not exist!' % (self.data_root))
@@ -221,7 +229,7 @@ class DeepPlanetConfig:
 			self.nodata = 0
  		###################### 和训练样本相关的变量 ###############################
 		# 训练网络
-		self.model_dir = 'models'
+		self.model_dir = os.path.join(self.root_dir, 'models')
 		self.solver = '%s/segnet_solver.prototxt' % self.model_dir
 		self.train_net_template = 'models/segnet_train.prototxt'
 		self.train_net = '%s/segnet_train.prototxt' % self.model_dir
