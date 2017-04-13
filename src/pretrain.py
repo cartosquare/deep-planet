@@ -21,7 +21,7 @@ from skimage import io
 import json
 import globalmaptiles
 import subprocess
-
+from vector_layer import VectorLayer
 from config import DeepPlanetConfig
 ################################## Functions ########################
 def log(file_handle, message):
@@ -244,7 +244,7 @@ def get_raster_extent(src):
     return (map_minx, map_miny, map_maxx, map_maxy)
 
 
-def tiler(src, out): 
+def tiler_tif(src, out): 
     log(flog, 'tilering level %s, from %s to %s ...' % (config.tile_level, src, out))
     create_directory_if_not_exist(out)
     
@@ -266,7 +266,7 @@ def tiler(src, out):
             ymax = 1 << tz
             invert_ty = ymax - ty - 1
             # ty for TMS bottom origin, invert_ty Use top origin tile scheme (like OSM or GMaps)
-            tilepath = os.path.join(out, "%d_%d_%d.%s" % (tz, tx, invert_ty, config.image_type))
+            tilepath = os.path.join(out, "%d_%d_%d.tif" % (tz, tx, invert_ty))
 
             (minx, miny, maxx, maxy) = mercator.TileBounds(tx, ty, tz)
             if config.mode == 'train':
@@ -278,10 +278,7 @@ def tiler(src, out):
                 tile_size = config.image_dim + config.overlap
 
             if not os.path.exists(tilepath):
-                if config.image_type == 'tif':
-                    command = "%s -of GTiff -te %s %s %s %s -ts %d %d -r near -multi -q %s %s" % (os.path.join(bundle_dir, 'gdalwarp'), format(minx, '.10f'), format(miny, '.10f'), format(maxx, '.10f'), format(maxy, '.10f'), tile_size, tile_size, src, tilepath)
-                else:
-                    command = "%s -of GTiff -co COMPRESS=JPEG -ot Byte -te %s %s %s %s -ts %d %d -r near -multi -q %s %s" % (os.path.join(bundle_dir, 'gdalwarp'), format(minx, '.10f'), format(miny, '.10f'), format(maxx, '.10f'), format(maxy, '.10f'), tile_size, tile_size, src, tilepath)
+                command = "%s -of GTiff -te %s %s %s %s -ts %d %d -r near -multi -q %s %s" % (os.path.join(bundle_dir, 'gdalwarp'), format(minx, '.10f'), format(miny, '.10f'), format(maxx, '.10f'), format(maxy, '.10f'), tile_size, tile_size, src, tilepath)
             
                 #print command
                 status  = execute_system_command(command)
@@ -289,6 +286,51 @@ def tiler(src, out):
                     log('process %s fail!' % (tilepath))
                     # not break the whole time consuming process !!!
                     #return False
+    return True
+                
+
+def flatten_google_dir(out, level):
+    # reorganize files
+    google_tile_dir = os.path.join(out, str(level))
+    xs = os.listdir(google_tile_dir)
+
+    ntiles = 2 ** int(level)
+    for x in xs:
+        if x == '.DS_Store':
+            continue
+
+        x_path = os.path.join(google_tile_dir, x)
+        ys = os.listdir(x_path)
+
+        for y_postfix in ys:
+            y_items = y_postfix.split('.')
+            if len(y_items) != 2 or y_items[1] != 'png':
+                continue
+
+            y = y_items[0]
+            y_flip = int(ntiles - float(y) - 1)
+
+            old_file = os.path.join(x_path, y_postfix)
+            new_file = os.path.join(out, '%s_%s_%d.png' % (level, x, y_flip))
+            shutil.copy(old_file, new_file)
+    #os.rmdir(google_tile_dir)
+    shutil.rmtree(google_tile_dir)
+
+def tiler_png(src, out, level):
+    log(flog, 'tilering png level %s, from %s to %s ...' % (str(level), src, out))
+    create_directory_if_not_exist(out)
+    command = "gdal2tiles.py -s epsg:3857 -a %s -e -w none -z %s %s %s" % (str(config.nodata), level, src, out)
+    print command
+    argv = gdal.GeneralCmdLineProcessor(command.split())
+    gdal2tiles = GDAL2Tiles(argv[1:])
+    gdal2tiles.process()
+
+    level_arr = level.split('-')
+    if len(level_arr) == 1:
+        flatten_google_dir(out, int(level_arr[0]))
+    else:
+        for i in range(int(level_arr[0]), int(level_arr[1]) + 1):
+            flatten_google_dir(out, i)
     return True
 
 
@@ -390,6 +432,41 @@ def proces_predict_tif(tif_file):
 
     if nodata:
         os.unlink(tif_file)
+
+
+def rm_cloud_tiles():
+    log(flog, 'remove cloud tiles ...')
+    if not os.path.exists(config.cloud_tiles_dir):
+        os.mkdir(config.cloud_tiles_dir)
+    
+    cloud_file = config.cloud_file
+    clouddata = VectorLayer()
+    if not clouddata.open(cloud_file, 0, 'ESRI Shapefile'):
+        log(flog, 'open cloud file fail!')
+        return
+    
+    mercator = globalmaptiles.GlobalMercator()
+    files = os.listdir(config.analyze_tiles_dir)
+    tz = int(config.tile_level)
+    ymax = 1 << tz
+    for i in range(len(files)):
+        if not is_tiff(files[i]):
+            continue
+        filename = files[i].split('/')[-1]
+        items = filename.split('.')[0].split('_')
+        z = int(items[0])
+        tx = int(items[1])
+        ty = int(items[2])
+        invert_ty = ymax - ty - 1
+        bounds = mercator.TileBounds(tx, invert_ty, tz)
+        print(bounds)
+
+        layer = clouddata.spatialQuery(bounds)
+        if layer.GetFeatureCount() > 0:
+            old_file = os.path.join(config.analyze_tiles_dir, files[i])
+            new_file = os.path.join(config.cloud_tiles_dir, files[i])
+            print('move cloud file from %s to %s' % (old_file, new_file))
+            shutil.move(old_file, new_file)
 
 
 def rm_invalid_tiles(src_dir, image_type, mode):
@@ -1140,13 +1217,23 @@ if __name__=='__main__':
 
         ## tiler
         if not os.path.exists(config.analyze_tiles_dir):
-            if not tiler(config.merged_analyze_file, config.analyze_tiles_dir):
-                log(flog, 'tiler tif fail, exit ...')
-                sys.exit()
+            if config.image_type == 'tif':
+                if not tiler_tif(config.merged_analyze_file, config.analyze_tiles_dir):
+                    log(flog, 'tiler tif fail, exit ...')
+                    sys.exit()
+            else:
+                if not tiler_png(config.merged_analyze_file, config.analyze_tiles_dir, str(config.tile_level)):
+                    log(flog, 'tiler png fail, exit ...')
+                    sys.exit()
         
             if config.rm_incomplete_tile:
                 # Delete invalid training tiles
                 rm_invalid_tiles(config.analyze_tiles_dir, config.image_type, config.mode)
+        # remove cloud tiles
+        if os.path.exists(config.cloud_file):
+            rm_cloud_tiles()
+        else:
+            log(flog, 'skip rm clouds %s' % (config.cloud_file))
     else:
         log(flog, 'skip analyze progress ...')
 

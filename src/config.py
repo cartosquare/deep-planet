@@ -329,7 +329,7 @@ class DeepPlanetConfig:
 		self.label_page = '%s/label.html' % (self.data_root)
 		
 		#****************************** cloud configuration[not used] *********************
-		self.cloud_dir = '%s/cloud' % self.data_root
+		self.cloud_file = '%s/cloud/cloud.shp' % self.data_root
 		self.cloud_tiles_dir = '%s/cloud_tiles' % self.data_root
 		self.valid_cloud_tiles_dir = '%s/valid_cloud_tiles' % self.data_root
 
