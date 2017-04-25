@@ -18,6 +18,17 @@ import caffe
 import datetime
 from config import DeepPlanetConfig
 
+import globalmaptiles
+import subprocess
+
+env = dict(os.environ)  # make a copy of the environment
+if getattr(sys, 'frozen', False):
+    # we are running in a bundle
+    bundle_dir = sys._MEIPASS
+    env['GDAL_DATA'] = os.path.join(sys._MEIPASS, 'share/gdal/1.11/')
+else:
+    # we are running in a normal Python environment
+    bundle_dir = os.path.dirname(os.path.abspath(__file__))
 
 def log(file_handle, message):
     current_time = datetime.datetime.now()
@@ -32,6 +43,8 @@ def parseOptions(config_file):
 def predict():
     model = str(os.path.join(config.deploy_dir, config.predict_net))
     weights = str(os.path.join(config.deploy_dir, config.test_weights))
+    print(model)
+    print(weights)
     if config.test_iter:
         iter = config.test_iter
     else:
@@ -250,6 +263,72 @@ def crop():
         if cnt % 300 == 0:
             print('%d of %d' % (cnt, total_tiles))
 
+def execute_system_command(command):
+    try:
+        retcode = subprocess.call(command, env=env, shell=True)
+        if retcode < 0:
+            print("Child was terminated by signal", -retcode)
+            return False
+        else:
+            return True
+    except OSError as e:
+        print("Execution failed:", e)
+        return False
+
+def png_to_tif(filename):
+    items = filename.strip().split('_')
+    tz = int(items[0])
+    tx = int(items[1])
+    invert_ty = int(items[2])
+
+    ymax = 1 << tz
+    ty = ymax - invert_ty - 1
+
+    mercator = globalmaptiles.GlobalMercator()
+    (minLat, minLon, maxLat, maxLon) = mercator.TileLatLonBounds(tx, ty, tz)
+    print(minLat, minLon, maxLat, maxLon)
+    input_file = os.path.join(config.predict_crop_image_dir, filename + '.png')
+    output_file = os.path.join(config.predict_crop_tif_dir, filename + '.tif')
+    command = '%s -of Gtiff -a_ullr %f %f %f %f -a_srs EPSG:4326 %s %s' % (os.path.join(bundle_dir, 'gdal_translate'), minLon, maxLat, maxLon, minLat, input_file, output_file)
+
+    execute_system_command(command)
+
+def tif_to_vector(filename):
+    input_file = os.path.join(config.predict_crop_tif_dir, filename + '.tif')
+    output_file = os.path.join(config.predict_crop_vector_dir, filename + '.shp')
+
+    command = '%s %s -f "ESRI Shapefile" %s %s label' % (os.path.join(bundle_dir, 'gdal_polygonize.py'), input_file, output_file, filename)
+    print(command)
+    execute_system_command(command)
+
+def append_vector(merged_file, filename):
+    input_file = os.path.join(config.predict_crop_vector_dir, filename + '.shp')
+
+    if not os.path.exists(merged_file):
+        command = '%s -f "ESRI Shapefile" %s %s' % (os.path.join(bundle_dir, 'ogr2ogr'), merged_file, input_file)
+    else:
+        filename, file_extension = os.path.splitext(merged_file)
+        command = '%s -f "ESRI Shapefile" -update -append %s %s -nln %s' % (os.path.join(bundle_dir, 'ogr2ogr'), merged_file, input_file, filename.split('/')[-1])
+
+    print command
+    execute_system_command(command)
+
+def to_vector():
+    log(flog, 'georeference tiles from %s to %s and %s' % (config.predict_crop_image_dir, config.predict_crop_tif_dir, config.predict_crop_vector_dir))
+
+    if not os.path.exists(config.predict_crop_tif_dir):
+        os.mkdir(config.predict_crop_tif_dir)
+    if not os.path.exists(config.predict_crop_vector_dir):
+        os.mkdir(config.predict_crop_vector_dir)
+
+    image_tiles = os.listdir(config.predict_crop_image_dir)
+    for png_file in image_tiles:
+        filename, file_extension = os.path.splitext(png_file)
+
+        png_to_tif(filename)
+        tif_to_vector(filename)
+        append_vector(config.predict_vector_file, filename)
+
 
 if __name__ == '__main__':
     # Parse command line options
@@ -270,6 +349,7 @@ if __name__ == '__main__':
     image_size = config.image_dim + config.overlap
     overlap = config.overlap
 
+    """
     # Step 1, predict images
     predict()
 
@@ -281,6 +361,9 @@ if __name__ == '__main__':
 
     # Step 4, crop margins
     crop()
+    """
+    # Step 5, to vector
+    to_vector()
 
     # happy ending
     log(flog, 'success.')

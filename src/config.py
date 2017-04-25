@@ -234,7 +234,7 @@ class DeepPlanetConfig:
 			self.nodata = 0
  		###################### 和训练样本相关的变量 ###############################
 		# 训练网络
-		self.model_dir = os.path.join(self.root_dir, 'models')
+		self.model_dir = os.path.join(self.deploy_dir, 'models')
 		self.solver = '%s/segnet_solver.prototxt' % self.model_dir
 		self.train_net_template = 'models/segnet_train.prototxt'
 		self.train_net = '%s/segnet_train.prototxt' % self.model_dir
@@ -247,6 +247,8 @@ class DeepPlanetConfig:
 		# 测试网络
 		self.test_dir = '%s/inference' % self.model_dir
 		self.test_weights = '%s/test_weights.caffemodel' % self.test_dir
+		self.inference_net = '%s/deploy.prototxt' % self.test_dir
+
 		self.test_net = '%s/segnet_test.prototxt' % self.model_dir
 		self.predict_net = '%s/segnet_predict.prototxt' % self.model_dir
 		self.inference_net_template = 'models/segnet_inference.prototxt'
@@ -262,7 +264,10 @@ class DeepPlanetConfig:
 		self.predict_tiles_dir = '%s/predict_pd_tiles' % self.deploy_dir
 		self.predict_fusion_tiles_dir = '%s/predict_pd_fusion_tiles' % self.deploy_dir
 		self.predict_crop_image_dir = '%s/predict_pd_crop_tiles' % self.deploy_dir
-		
+		self.predict_crop_tif_dir = '%s/predict_pd_crop_tifs' % self.deploy_dir
+		self.predict_crop_vector_dir = '%s/predict_pd_crop_vector' % self.deploy_dir
+		self.predict_vector_file = '%s/segment.shp' % self.deploy_dir
+
 		# 分类权重
 		self.weight_file = '%s/weights.txt' % self.deploy_dir
 

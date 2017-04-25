@@ -26,8 +26,8 @@ if __name__ == '__main__':
         print('initialize fail! exist...')
         exit()
     
-    model_def = str(os.path.join(config.deploy_dir, config.test_net))
-    model_weights = str(os.path.join(config.deploy_dir, config.test_weights))
+    model_def = str(config.inference_net)
+    model_weights = str(config.test_weights)
 
     image_file = sys.argv[2]
     output_image = './out.png'
