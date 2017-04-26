@@ -267,7 +267,7 @@ class DeepPlanetConfig:
 		self.predict_crop_tif_dir = '%s/predict_pd_crop_tifs' % self.deploy_dir
 		self.predict_crop_vector_dir = '%s/predict_pd_crop_vector' % self.deploy_dir
 		self.predict_vector_file = '%s/segment.shp' % self.deploy_dir
-
+		self.predict_tif_file = '%s/segment.tif' % self.deploy_dir
 		# 分类权重
 		self.weight_file = '%s/weights.txt' % self.deploy_dir
 

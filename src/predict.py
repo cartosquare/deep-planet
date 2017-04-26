@@ -80,27 +80,9 @@ def predict():
 
 	    image = np.squeeze(image[0,:,:,:])
 	    output = np.squeeze(predicted[0,:,:,:])
-
 	    ind = np.argmax(output, axis=0)
-
-	    r = ind.copy()
-	    g = ind.copy()
-	    b = ind.copy()
-	    a = ind.copy()
-
-	    for l in range(0, config.classes):
-		    r[ind==l] = config.class_colors[l][0]
-		    g[ind==l] = config.class_colors[l][1]
-		    b[ind==l] = config.class_colors[l][2]
-		    a[ind==l] = config.class_colors[l][3]
-
-	    rgba = np.zeros((ind.shape[0], ind.shape[1], 4))
-	    rgba[:,:,0] = r / 255.0
-	    rgba[:,:,1] = g / 255.0
-	    rgba[:,:,2] = b / 255.0
-	    rgba[:,:,3] = a / 255.0
-
-	    io.imsave('%s/%d.png' % (pd_dir, i), rgba)
+            ind = ind.astype(int)
+            io.imsave('%s/%d.png' % (pd_dir, i), ind)
 
 def convert_predict():
     log(flog, 'converting filename from %s to %s' % (config.predict_dir, config.predict_tiles_dir))
@@ -131,7 +113,8 @@ def get_file(filename):
         return file_path
 
 def color_equal(a, b):
-    return (a[0] == b[0] and a[1] == b[1] and a[2] == b[2])
+    #return (a[0] == b[0] and a[1] == b[1] and a[2] == b[2])
+    return (a == b)
 
 def fusion():
     log(flog, 'converting filename from %s to %s' % (config.predict_tiles_dir, config.predict_fusion_tiles_dir))
@@ -253,7 +236,7 @@ def crop():
         
         tile_file = os.path.join(config.predict_fusion_tiles_dir, tile)
         tile_image = Image.open(tile_file)
-        new_im = Image.new('RGBA', (image_size - overlap, image_size - overlap))
+        new_im = Image.new('I', (image_size - overlap, image_size - overlap))
         new_im.paste(tile_image, (-overlap, -overlap))
 
         new_im_file = os.path.join(config.predict_crop_image_dir, tile)
@@ -326,9 +309,17 @@ def to_vector():
         filename, file_extension = os.path.splitext(png_file)
 
         png_to_tif(filename)
-        tif_to_vector(filename)
-        append_vector(config.predict_vector_file, filename)
+        #tif_to_vector(filename)
+        #append_vector(config.predict_vector_file, filename)
 
+    command = 'gdal_merge.py -o %s %s/*.tif' % (config.predict_tif_file, config.predict_crop_tif_dir)
+    print(command)
+    execute_system_command(command)
+
+    filename, file_extension = os.path.splitext(config.predict_vector_file)
+    command = '%s %s -f "ESRI Shapefile" %s %s label' % (os.path.join(bundle_dir, 'gdal_polygonize.py'), config.predict_tif_file, config.predict_vector_file, filename.split('/')[-1])
+    print(command)
+    execute_system_command(command)
 
 if __name__ == '__main__':
     # Parse command line options
@@ -349,7 +340,6 @@ if __name__ == '__main__':
     image_size = config.image_dim + config.overlap
     overlap = config.overlap
 
-    """
     # Step 1, predict images
     predict()
 
@@ -361,7 +351,7 @@ if __name__ == '__main__':
 
     # Step 4, crop margins
     crop()
-    """
+
     # Step 5, to vector
     to_vector()
 
