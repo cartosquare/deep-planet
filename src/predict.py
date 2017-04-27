@@ -21,6 +21,9 @@ from config import DeepPlanetConfig
 import globalmaptiles
 import subprocess
 
+import warnings
+warnings.filterwarnings("ignore")
+
 env = dict(os.environ)  # make a copy of the environment
 if getattr(sys, 'frozen', False):
     # we are running in a bundle

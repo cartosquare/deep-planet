@@ -23,6 +23,10 @@ import globalmaptiles
 import subprocess
 from vector_layer import VectorLayer
 from config import DeepPlanetConfig
+
+import warnings
+warnings.filterwarnings("ignore")
+
 ################################## Functions ########################
 def log(file_handle, message):
     current_time = datetime.datetime.now()
@@ -459,7 +463,7 @@ def rm_cloud_tiles():
         ty = int(items[2])
         invert_ty = ymax - ty - 1
         bounds = mercator.TileBounds(tx, invert_ty, tz)
-        print(bounds)
+        #print(bounds)
 
         layer = clouddata.spatialQuery(bounds)
         if layer.GetFeatureCount() > 0:
@@ -751,6 +755,7 @@ def proces_label_img(tile):
     img = img + config.background_class
     img = img.astype(int)
 
+    is_img_empty = True
     for label_dir_name in config.label_dirs:
         tile_file = os.path.join(config.overlay_tiles_dir, label_dir_name, filename + '.json')
         if not os.path.exists(tile_file):
@@ -777,9 +782,11 @@ def proces_label_img(tile):
                         if val == config.class_names[k]:
                             # update pixel label
                             img[row][col] = k
+                            is_img_empty = False
                             break
     
-    io.imsave(new_tile_file, img)
+    if not is_img_empty:
+        io.imsave(new_tile_file, img)
 
 
 def split_train_test(train_dir, label_dir, train_file, test_file):
