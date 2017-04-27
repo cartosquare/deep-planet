@@ -1297,7 +1297,7 @@ if __name__=='__main__':
         ## generate html pages to visualize tiles
         generate_pages('visualize')
         # tiler
-        if not tiler(config.merged_visualize_file, config.visualize_tiles_dir):
+        if not tiler_png(config.merged_visualize_file, config.visualize_tiles_dir, str(config.visualize_level)):
             log(flog, 'tiler png fail, exit ...')
             sys.exit()
 
