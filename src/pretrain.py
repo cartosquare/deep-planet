@@ -22,6 +22,7 @@ import json
 import globalmaptiles
 import subprocess
 from vector_layer import VectorLayer
+import band_math
 from config import DeepPlanetConfig
 
 import warnings
