@@ -25,9 +25,9 @@ def parseOptions(config_file):
         return d
 
 def gen_solver_file():
-    log(flog, 'generating solver file %s' % os.path.join(config.deploy_dir, config.solver))
-    with open(os.path.join(config.deploy_dir, config.solver), 'w') as f:
-        f.write('net: "%s"\n' % (os.path.join(config.deploy_dir, config.train_net)))
+    log(flog, 'generating solver file %s' % config.solver)
+    with open(config.solver, 'w') as f:
+        f.write('net: "%s"\n' % (config.train_net))
         f.write('test_iter: 1\n')
         f.write('test_interval: 10000000\n')
         f.write('base_lr: 0.001\n')
@@ -39,15 +39,15 @@ def gen_solver_file():
         f.write('max_iter: %d\n' % (config.max_iter))
         f.write('weight_decay: 0.0005\n')
         f.write('snapshot: %d\n' % (config.snapshot))
-        f.write('snapshot_prefix: "%s"\n' % (os.path.join(config.deploy_dir, config.snapshot_prefix)))
+        f.write('snapshot_prefix: "%s"\n' % (config.snapshot_prefix))
         if config.use_gpu:
             f.write('solver_mode: GPU\n')
         else:
             f.write('solver_mode: CPU\n')
 
 def gen_train_file():
-    log(flog, 'generating train net file %s' % os.path.join(config.deploy_dir, config.train_net))
-    ftrain = open(os.path.join(config.deploy_dir, config.train_net), 'w')
+    log(flog, 'generating train net file %s' % config.train_net)
+    ftrain = open(config.train_net, 'w')
 
     with open(config.train_net_template, 'r') as f:
         for line in f:
@@ -114,11 +114,11 @@ def gen_train_file():
 
 def gen_infence_file(mode):
     if mode == 'test':
-        log(flog, 'generating test net file %s' % os.path.join(config.deploy_dir, config.test_net))
-        ftrain = open(os.path.join(config.deploy_dir, config.test_net), 'w')
+        log(flog, 'generating test net file %s' % config.test_net)
+        ftrain = open(config.test_net, 'w')
     else:
-        log(flog, 'generating predict net file %s' % os.path.join(config.deploy_dir, config.predict_net))
-        ftrain = open(os.path.join(config.deploy_dir, config.predict_net), 'w')
+        log(flog, 'generating predict net file %s' % config.predict_net)
+        ftrain = open(config.predict_net, 'w')
 
     with open(config.inference_net_template, 'r') as f:
         for line in f:
@@ -190,10 +190,10 @@ def execute_system_command(command):
 def train():
     if config.use_gpu:
         log(flog, 'starting training  using gpu %d' % config.gpu)
-        command = '%s train -gpu %d -solver %s' % (caffe_bin, config.gpu, os.path.join(config.deploy_dir, config.solver))
+        command = '%s train -gpu %d -solver %s' % (caffe_bin, config.gpu, config.solver)
     else:
         log(flog, 'starting training using cpu')
-        command = '%s train -solver %s' % (caffe_bin, os.path.join(config.deploy_dir, config.solver))
+        command = '%s train -solver %s' % (caffe_bin, config.solver)
 
     print command
     return execute_system_command(command)
@@ -223,17 +223,17 @@ if __name__=='__main__':
     flog = open(config.log_file, 'w')
     log(flog, 'training, this may take a long time ...')
 
-    if not os.path.exists(os.path.join(config.deploy_dir, config.model_dir)):
+    if not os.path.exists(config.model_dir):
         log(flog, 'create model directory %s' % config.model_dir)
-        os.mkdir(os.path.join(config.deploy_dir, config.model_dir))
+        os.mkdir(config.model_dir)
 
-    if not os.path.exists(os.path.join(config.deploy_dir, config.snapshot_dir)):
+    if not os.path.exists(config.snapshot_dir):
         log(flog, 'create snapshot directory %s' % config.snapshot_dir)
-        os.mkdir(os.path.join(config.deploy_dir, config.snapshot_dir))
+        os.mkdir(config.snapshot_dir)
     
-    if not os.path.exists(os.path.join(config.deploy_dir, config.test_dir)):
+    if not os.path.exists(config.test_dir):
         log(flog, 'create test directory %s' % config.test_dir)
-        os.mkdir(os.path.join(config.deploy_dir, config.test_dir))
+        os.mkdir(config.test_dir)
 
     gen_solver_file()
     gen_train_file()
