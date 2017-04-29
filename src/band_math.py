@@ -18,9 +18,9 @@ class BandMath:
     def NDVI(self, nir, red):
         mask = np.greater(red + nir, 0)
         ndvi = np.choose(mask, (0, (nir - red) / (nir + red)))
-        return (ndvi * self.SCALE).astype(np.uint16)
+        return ((ndvi + 1) * self.SCALE).astype(np.uint16)
 
     def NDWI(self, nir, green):
         mask = np.greater(green + nir, 0)
         ndwi = np.choose(mask, (0, (green - nir) / (nir + green)))
-        return (ndwi * self.SCALE).astype(np.uint16)
+        return ((ndwi + 1) * self.SCALE).astype(np.uint16)
