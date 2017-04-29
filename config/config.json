@@ -9,6 +9,7 @@
     "visualize_level": "[str], visualize levels, for example: 10-15",
     "image_type": "[str], could be tif or png",
     "analyze_bands": "[array], bands for training, e.g. [1, 2, 3]. If not specified, will use all bands.",
+    "extra_bands": "[array], extra bands, e.g. {'NDVI': [5, 3], 'NDWI': [5, 2]}",
     "visualize_bands": "[array], bands for visualize, e.g. [1, 2, 3]. If not specified, will use all bands",
     "virtual_dataset": "[bool], use virtual dataset or not when merge, default to false",
     "data_name": "[str], training dataset name.",

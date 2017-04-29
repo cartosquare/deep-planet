@@ -75,6 +75,13 @@ class DeepPlanetConfig:
 		else:
 			print('warning: no analyze_bands set! default all bands')
 			self.analyze_bands = []
+		
+		if 'extra_bands' in pobject:
+			self.extra_bands = pobject['extra_bands']
+			for band_method in self.extra_bands:
+				print(band_method, self.extra_bands[band_method])
+		else:
+			self.extra_bands = None
 
 		# 可视化的波段
 		if 'visualize_bands' in pobject:
@@ -232,6 +239,7 @@ class DeepPlanetConfig:
 			self.nodata = pobject['nodata']
 		else:
 			self.nodata = 0
+
  		###################### 和训练样本相关的变量 ###############################
 		# 训练网络
 		self.model_dir = os.path.join(self.deploy_dir, 'models')

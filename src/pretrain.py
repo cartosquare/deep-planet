@@ -22,7 +22,7 @@ import json
 import globalmaptiles
 import subprocess
 from vector_layer import VectorLayer
-import band_math
+from band_math import BandMath
 from config import DeepPlanetConfig
 
 import warnings
@@ -337,6 +337,38 @@ def tiler_png(src, out, level):
         for i in range(int(level_arr[0]), int(level_arr[1]) + 1):
             flatten_google_dir(out, i)
     return True
+
+
+
+def add_extra_bands():
+    tiles = os.listdir(config.analyze_tiles_dir)
+    output_dir = config.analyze_tiles_dir + '_extra'
+    if not os.path.exists(output_dir):
+        os.mkdir(output_dir)
+    
+    log(flog, 'adding extra bands, from %s to %s ...' % (config.analyze_tiles_dir, output_dir))
+
+    band_math_op = BandMath()
+    for tile in tiles:
+        tile_file = os.path.join(config.analyze_tiles_dir, tile)
+        new_tile_file = os.path.join(output_dir, tile)
+
+        dataset = gdal.Open(tile_file)
+        newdataset = gdal.GetDriverByName('MEM').CreateCopy(' ', dataset, 0)
+        
+        for band_method in config.extra_bands:
+            band_list = []
+            for iband in config.extra_bands[band_method]:
+                band_list.append(dataset.GetRasterBand(iband).ReadAsArray().astype(numpy.float16))
+            newband = band_math_op.compute(band_method, band_list)
+
+            newdataset.AddBand(gdal.GDT_UInt16)
+            newdataset.GetRasterBand(newdataset.RasterCount).WriteArray(newband)
+
+        dst_ds = gdal.GetDriverByName('GTiff').CreateCopy(new_tile_file, newdataset, 0)
+        del dst_ds
+
+    config.analyze_tiles_dir = output_dir
 
 
 def proces_analyze_img(image_file):
@@ -1242,6 +1274,10 @@ if __name__=='__main__':
             rm_cloud_tiles()
         else:
             log(flog, 'skip rm clouds %s' % (config.cloud_file))
+
+        # add extra bands if specified
+        if config.extra_bands is not None:
+            add_extra_bands()
     else:
         log(flog, 'skip analyze progress ...')
 
