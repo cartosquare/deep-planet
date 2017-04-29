@@ -339,7 +339,6 @@ def tiler_png(src, out, level):
     return True
 
 
-
 def add_extra_bands():
     tiles = os.listdir(config.analyze_tiles_dir)
     output_dir = config.analyze_tiles_dir + '_extra'
@@ -350,6 +349,10 @@ def add_extra_bands():
 
     band_math_op = BandMath()
     for tile in tiles:
+        if not is_tiff(tile):
+            print 'unsupport file ', tile
+            continue
+
         tile_file = os.path.join(config.analyze_tiles_dir, tile)
         new_tile_file = os.path.join(output_dir, tile)
 
