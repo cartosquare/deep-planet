@@ -2,8 +2,64 @@ name: "VGG_ILSVRC_16_layer"
 layer {
   name: "data"
 }
+
 layer {
   bottom: "data"
+  top: "conv0"
+  name: "conv0"
+  type: "Convolution"
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  param {
+    lr_mult: 2
+    decay_mult: 0
+  }
+  convolution_param {
+    weight_filler {
+      type: "msra"
+    }
+    bias_filler {
+      type: "constant"
+    }
+    num_output: 64
+    pad: 1
+    kernel_size: 1
+  }
+}
+layer {
+  bottom: "conv0"
+  top: "conv0"
+  name: "conv0_bn"
+  type: "BN"
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  param {
+    lr_mult: 1
+    decay_mult: 0
+  }
+  bn_param {
+	scale_filler {
+	  type: "constant"
+	  value: 1
+	}
+	shift_filler {
+	  type: "constant"
+	  value: 0.001
+	}
+ }
+}
+layer {
+  bottom: "conv0"
+  top: "conv0"
+  name: "relu0"
+  type: "ReLU"
+}
+layer {
+  bottom: "conv0"
   top: "conv1_1"
   name: "conv1_1"
   type: "Convolution"
