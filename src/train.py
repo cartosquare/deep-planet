@@ -235,8 +235,10 @@ if __name__=='__main__':
         log(flog, 'create test directory %s' % config.test_dir)
         os.mkdir(config.test_dir)
 
-    gen_solver_file()
-    gen_train_file()
-    gen_infence_file('test')
-    gen_infence_file('predict')
+    if not os.path.exists(config.train_net):
+        gen_solver_file()
+        gen_train_file()
+        gen_infence_file('test')
+        gen_infence_file('predict')
+        
     train()
