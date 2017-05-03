@@ -142,6 +142,16 @@ class DeepPlanetConfig:
 		else:
 			self.use_snapshot = 100000
 		
+		if 'weights' in pobject:
+			self.weights = pobject['weights']
+		else:
+			self.weights = None
+
+		if 'restore_snapshot' in pobject:
+			self.restore_snapshot = pobject['restore_snapshot']
+		else:
+			self.restore_snapshot = None
+			
 		if 'batch_size' in pobject:
 			self.batch_size = pobject['batch_size']
 		else:

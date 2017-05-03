@@ -195,6 +195,12 @@ def train():
         log(flog, 'starting training using cpu')
         command = '%s train -solver %s' % (caffe_bin, config.solver)
 
+    if config.weights is not None:
+        command = '%s -weights %s' % (command, config.weights)
+
+    if config.restore_snapshot is not None:
+        command = '%s -snapshot %s' % (command, config.restore_snapshot)
+
     print command
     return execute_system_command(command)
 
@@ -240,5 +246,5 @@ if __name__=='__main__':
         gen_train_file()
         gen_infence_file('test')
         gen_infence_file('predict')
-        
+
     train()

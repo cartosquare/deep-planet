@@ -19,6 +19,8 @@
     "deploy_mode": "[str], when deploying two or more datasets, use deploy_mode to set how they combine, could be append or stack. Default is append.",
     "snapshot": "[int], inteval of saving training result.",
     "use_snapshot": "[int], use which snapshot to generate test weight.",
+    "restore_snapshot": "[int], the snapshot solver state to resume training.",
+    "weights": "[str], load pretrained weights.",
     "use_gpu": "[bool], use gpu or not",
     "gpu": "[bool], use which gpu",
     "batch_size": "[int], batch size when training. default to 6",
