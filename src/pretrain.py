@@ -81,7 +81,7 @@ def get_epsg(src_dir):
                 log(flog, 'find epsg code %s' % str(epsg_code))
             else:
                 if epsg_code != srs.GetAuthorityCode(None):
-                    log(flog, '%s contains mulity SpatialReference %s' % file_path, str(srs.GetAuthorityCode(None)))
+                    log(flog, '%s contains mulity SpatialReference %s' % (file_path, str(srs.GetAuthorityCode(None))))
                     return None
     return epsg_code
 
