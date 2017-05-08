@@ -183,13 +183,10 @@ if __name__ == '__main__':
     else:
         caffe.set_mode_cpu()
     
-    out_dir = str('%s/%s' % (config.deploy_dir, config.test_dir))
-    train_model = str('%s/%s' % (config.deploy_dir, config.train_net))
-    weights = str('%s/%s' % (config.deploy_dir, config.trained_weights))
+    out_dir = str(config.test_dir)
+    train_model = str(config.train_net)
+    weights = str(config.trained_weights)
     print(out_dir, train_model, weights)
-    # out_dir = 'landsat8/models/inference'
-    # train_model = 'landsat8/models/segnet_train.prototxt'
-    # weights = 'landsat8/models/training/dp_iter_40.caffemodel'
 
     log(flog, 'building testing net from %s %s to %s' % (train_model, weights, out_dir))
 
