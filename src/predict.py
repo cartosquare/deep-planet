@@ -44,8 +44,8 @@ def parseOptions(config_file):
         return d
 
 def predict():
-    model = str(os.path.join(config.deploy_dir, config.predict_net))
-    weights = str(os.path.join(config.deploy_dir, config.test_weights))
+    model = str(config.predict_net)
+    weights = str(config.test_weights)
     print(model)
     print(weights)
     if config.test_iter:

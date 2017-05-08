@@ -46,8 +46,8 @@ if __name__ == '__main__':
     log(flog, 'testing, this may take a long time ...')
 
     # Import arguments
-    model = str(os.path.join(config.deploy_dir, config.test_net))
-    weights = str(os.path.join(config.deploy_dir, config.test_weights))
+    model = str(config.test_net)
+    weights = str(config.test_weights)
     if config.test_iter:
         iter = config.test_iter
     else:
