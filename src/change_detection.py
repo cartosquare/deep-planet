@@ -30,18 +30,18 @@ def set_change_color(former,latter):
 						if j>i:
 							color = np.array(detect_colors[(i-1)*(class_count-1)+j-2],'uint8')
 
-def compare_different(img_former,img_latter,img_Result,filename,noise_size):
+def compare_different(img_former,img_latter,img_result,filename,noise_size):
 	for x in range(len(img_former)):
 		for y in range(len(img_former[0])):
-			img_Result[x][y] =np.array([255,255,255,0],'uint8')
+			img_result[x][y] =np.array([255,255,255,0],'uint8')
 			if ( equal_a1_a2(img_former[x][y],img_latter[x][y]) == False):
 				color = set_change_color(img_former[x][y],img_latter[x][y])
-				img_Result[x][y] = color
-	Result_save_path = os.path.join(Result_file_list_path,filename)
+				img_result[x][y] = color
+	result_save_path = os.path.join(result_file_list_path,filename)
 	print filename
 	if noise_size != 0:
-		img_Result = cv2.medianBlur(img_Result,noise_size)
-	io.imsave(Result_save_path,img_Result)
+		img_result = cv2.medianBlur(img_result,noise_size)
+	io.imsave(result_save_path,img_result)
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
 	parser.add_argument("config_path",help = "the path of config_file")
@@ -51,9 +51,9 @@ if __name__ == '__main__':
 		config_file = json.load(f)
 		
 		
-	Root_Dir = config_file['root_dir']
-	img_latter_file_list_path = os.path.join(Root_Dir,'output',config_file['detect_projects'][1],'predict_pd_crop_tiles')
-	img_former_file_list_path = os.path.join(Root_Dir,'output',config_file['detect_projects'][0],'predict_pd_crop_tiles')
+	root_dir = config_file['root_dir']
+	img_latter_file_list_path = os.path.join(root_dir,'output',config_file['detect_projects'][1],'predict_pd_crop_tiles')
+	img_former_file_list_path = os.path.join(root_dir,'output',config_file['detect_projects'][0],'predict_pd_crop_tiles')
 	img_former_filelist = os.listdir(img_former_file_list_path)
 	
 	
@@ -67,10 +67,10 @@ if __name__ == '__main__':
 		os._exit()
 	
 	
-	global Result_file_list_path
-	Result_file_list_path = os.path.join(Root_Dir,'output',config_file['detect_projects'][0]+'_To_'+config_file['detect_projects'][1],'compare_Result')
-	if (os.path.exists(Result_file_list_path) == False):
-		os.makedirs(Result_file_list_path)
+	global result_file_list_path
+	result_file_list_path = os.path.join(root_dir,'output',config_file['detect_projects'][0]+'_To_'+config_file['detect_projects'][1],'compare_Result')
+	if (os.path.exists(result_file_list_path) == False):
+		os.makedirs(result_file_list_path)
 	
 	
 	noise_size = 0
@@ -102,9 +102,9 @@ if __name__ == '__main__':
 		
 		a = img_former.shape[0]
 		b = img_former.shape[1]
-		img_Result = [[0 for x in range(a)] for y in range(b)]
+		img_result = [[0 for x in range(a)] for y in range(b)]
 		
-		result.append(pool.apply_async(compare_different,(img_former,img_latter,img_Result,filename,noise_size, )))
+		result.append(pool.apply_async(compare_different,(img_former,img_latter,img_result,filename,noise_size, )))
 	pool.close()
 	pool.join()
 	for res in result:
