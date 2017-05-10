@@ -278,16 +278,19 @@ class DeepPlanetConfig:
 		self.test_statistic_file = '%s/acc.txt' % self.deploy_dir
 
 		# 预测数据输出目录
-		self.predict_dir = '%s/predict_pd' % self.deploy_dir
-		self.predict_tiles_dir = '%s/predict_pd_tiles' % self.deploy_dir
-		self.predict_fusion_tiles_dir = '%s/predict_pd_fusion_tiles' % self.deploy_dir
-		self.predict_crop_image_dir = '%s/predict_pd_crop_tiles' % self.deploy_dir
-		self.predict_crop_tif_dir = '%s/predict_pd_crop_tifs' % self.deploy_dir
-		self.predict_crop_vector_dir = '%s/predict_pd_crop_vector' % self.deploy_dir
-		self.predict_vector_file = '%s/segment.shp' % self.deploy_dir
-		self.predict_tif_file = '%s/segment.tif' % self.deploy_dir
+		predict_output_dir = os.path.join(self.root_dir,'output',self.data_name)
+		if not os.path.exists(predict_output_dir):
+			os.mkdir(predict_output_dir)
+		self.predict_dir = '%s/predict_pd' % predict_output_dir
+		self.predict_tiles_dir = '%s/predict_pd_tiles' % predict_output_dir
+		self.predict_fusion_tiles_dir = '%s/predict_pd_fusion_tiles' % predict_output_dir
+		self.predict_crop_image_dir = '%s/predict_pd_crop_tiles' % predict_output_dir
+		self.predict_crop_tif_dir = '%s/predict_pd_crop_tifs' % predict_output_dir
+		self.predict_crop_vector_dir = '%s/predict_pd_crop_vector' % predict_output_dir
+		self.predict_vector_file = '%s/segment.shp' % predict_output_dir
+		self.predict_tif_file = '%s/segment.tif' % predict_output_dir
 		# 分类权重
-		self.weight_file = '%s/weights.txt' % self.deploy_dir
+		self.weight_file = '%s/weights.txt' % predict_output_dir
 
 		# mean file
 		self.mean_file = '%s/means.txt' % self.deploy_dir
