@@ -585,16 +585,12 @@ def create_overlap_predict_tiles(work_dir, new_dir, overlap):
 
         if os.path.exists(left_file):
             extent_left = True
-            width = config.image_dim + overlap
         else:
             extent_left = False
-            width = config.image_dim
         if os.path.exists(top_file):
             extent_top = True
-            height = config.image_dim + overlap
         else:
             extent_top = False
-            height = config.image_dim
         
         extent_left_and_top_corner = False
         if extent_left and extent_top:
@@ -602,11 +598,12 @@ def create_overlap_predict_tiles(work_dir, new_dir, overlap):
                 print('Warning: not exist left top file %s' % (left_top_file))  
             else:
                 extent_left_and_top_corner = True
-
+		width = config.image_dim + overlap
+		height = config.image_dim + overlap
         print('extent image %s to %d %d' % (file, width, height))
         new_im = Image.new('RGB', (width, height))
         center_image = Image.open(os.path.join(work_dir, file))
-        new_im.paste(center_image, (width - config.image_dim, height - config.image_dim))
+        new_im.paste(center_image, (overlap, overlap))
 
         if extent_left:
             deltx = -(config.image_dim - overlap)
