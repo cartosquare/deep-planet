@@ -189,7 +189,7 @@ def execute_system_command(command):
 
 def train():
     if config.use_gpu:
-        log(flog, 'starting training  using gpu %d' % config.gpu)
+        log(flog, 'starting training  using gpu %s' % config.gpu)
         command = '%s train -gpu %s -solver %s' % (caffe_bin, config.gpu, config.solver)
     else:
         log(flog, 'starting training using cpu')
