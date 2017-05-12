@@ -22,7 +22,7 @@
     "restore_snapshot": "[int], the snapshot solver state to resume training.",
     "weights": "[str], load pretrained weights.",
     "use_gpu": "[bool], use gpu or not",
-    "gpu": "[bool], use which gpu",
+    "gpu": "[str], run in GPU mode on given device IDs separated by ','.Use 'all' to run on all available GPUs",
     "batch_size": "[int], batch size when training. default to 6",
     "max_iter": "[int], max training iters, default to 400000",
     "substract_mean": "[bool], whether to calculate mean value of each channel, default to False.",
