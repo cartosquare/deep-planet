@@ -1,5 +1,5 @@
 from skimage import io
-caffe_root = './caffe-segnet/'
+caffe_root = './caffe-segnet-cudnn5/'
 import sys
 sys.path.insert(0, caffe_root + 'python')
 import caffe

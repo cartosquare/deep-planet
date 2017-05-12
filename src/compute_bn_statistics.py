@@ -7,7 +7,7 @@ import json
 from skimage.io import ImageCollection
 from config import DeepPlanetConfig
 
-caffe_root = './caffe-segnet/'
+caffe_root = './caffe-segnet-cudnn5/'
 import sys
 sys.path.insert(0, caffe_root + 'python')
 

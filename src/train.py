@@ -6,7 +6,7 @@ import datetime
 
 # for pyinstaller dependency ...
 from skimage import io
-caffe_root = './caffe-segnet/'
+caffe_root = './caffe-segnet-cudnn5/'
 import sys
 sys.path.insert(0, caffe_root + 'python')
 import caffe
@@ -223,7 +223,7 @@ if __name__=='__main__':
         caffe_bin = os.path.join(sys._MEIPASS, 'caffe')
     else:
         # we are running in a normal Python environment
-        caffe_bin = 'caffe-segnet/build/tools/caffe'
+        caffe_bin = 'caffe-segnet-cudnn5/build/tools/caffe'
 
     # Step 0, Open log file
     flog = open(config.log_file, 'w')
