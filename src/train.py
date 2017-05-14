@@ -9,8 +9,9 @@ from skimage import io
 import subprocess
 
 from config import DeepPlanetConfig
+from config import caffe_root
 import sys
-sys.path.insert(0, DeepPlanetConfig.caffe_root + 'python')
+sys.path.insert(0, caffe_root + 'python')
 import caffe
 
 
@@ -223,7 +224,7 @@ if __name__=='__main__':
         caffe_bin = os.path.join(sys._MEIPASS, 'caffe')
     else:
         # we are running in a normal Python environment
-        caffe_bin = '%s/build/tools/caffe' % DeepPlanetConfig.caffe_root
+        caffe_bin = '%s/build/tools/caffe' % caffe_root
 
     # Step 0, Open log file
     flog = open(config.log_file, 'w')

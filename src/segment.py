@@ -1,8 +1,9 @@
 from skimage import io
 
 from config import DeepPlanetConfig
+from config import caffe_root
 import sys
-sys.path.insert(0, self.caffe_root + 'python')
+sys.path.insert(0, caffe_root + 'python')
 import caffe
 
 import json

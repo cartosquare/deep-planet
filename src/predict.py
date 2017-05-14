@@ -11,8 +11,9 @@ from skimage import io
 
 import datetime
 from config import DeepPlanetConfig
+from config import caffe_root
 import sys
-sys.path.insert(0, DeepPlanetConfig.caffe_root + 'python')
+sys.path.insert(0, caffe_root + 'python')
 import caffe
 
 import globalmaptiles
