@@ -223,7 +223,7 @@ if __name__=='__main__':
         caffe_bin = os.path.join(sys._MEIPASS, 'caffe')
     else:
         # we are running in a normal Python environment
-        caffe_bin = 'caffe-segnet-cudnn5/build/tools/caffe'
+        caffe_bin = '%s/build/tools/caffe' % DeepPlanetConfig.caffe_root
 
     # Step 0, Open log file
     flog = open(config.log_file, 'w')
