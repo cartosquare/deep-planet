@@ -8,15 +8,12 @@ import json
 import shutil
 from PIL import Image
 from skimage import io
-#import pylab
-#from sklearn.preprocessing import normalize
-caffe_root = './caffe-segnet-cudnn5/' 			# Change this to the absolute directoy to SegNet Caffe
-import sys
-sys.path.insert(0, caffe_root + 'python')
 
-import caffe
 import datetime
 from config import DeepPlanetConfig
+import sys
+sys.path.insert(0, DeepPlanetConfig.caffe_root + 'python')
+import caffe
 
 import globalmaptiles
 import subprocess

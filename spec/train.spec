@@ -6,9 +6,9 @@ block_cipher = pyi_crypto.PyiBlockCipher(key='snoopyxu19910319')
 
 cwd = os.getcwd()
 a = Analysis(['../src/train.py'],
-             pathex=[cwd, os.path.join(cwd, 'caffe-segnet-cudnn5/python')],
+             pathex=[cwd, os.path.join(cwd, 'caffe-segnet/python')],
              binaries=[],
-             datas=[(os.path.join(cwd, 'caffe-segnet-cudnn5/build/tools/caffe'), '.'), (os.path.join(cwd, 'caffe-segnet-cudnn5/build/lib/libcaffe.so'), '.')] + collect_data_files("skimage.io._plugins"),
+             datas=[(os.path.join(cwd, 'caffe-segnet/build/tools/caffe'), '.'), (os.path.join(cwd, 'caffe-segnet/build/lib/libcaffe.so'), '.')] + collect_data_files("skimage.io._plugins"),
              hiddenimports=collect_submodules('skimage.io._plugins') + ['google.protobuf.internal'],
              hookspath=[],
              runtime_hooks=[],

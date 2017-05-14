@@ -3,6 +3,11 @@ import numpy as np
 import os
 import random
 
+# Global settings
+
+# './caffe-segnet-cudnn5/'
+caffe_root = './caffe-segnet/'
+
 ##########################################
 #
 # configuration class

@@ -8,16 +8,12 @@ import json
 import scipy
 import math
 from skimage import io
-#import pylab
-#from sklearn.preprocessing import normalize
-caffe_root = './caffe-segnet/' 			# Change this to the absolute directoy to SegNet Caffe
-import sys
-sys.path.insert(0, caffe_root + 'python')
-
-import caffe
 import datetime
-from config import DeepPlanetConfig
 
+from config import DeepPlanetConfig
+import sys
+sys.path.insert(0, DeepPlanetConfig.caffe_root + 'python')
+import caffe
 
 def log(file_handle, message):
     current_time = datetime.datetime.now()

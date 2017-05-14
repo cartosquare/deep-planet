@@ -6,10 +6,8 @@ import datetime
 import json
 from skimage.io import ImageCollection
 from config import DeepPlanetConfig
-
-caffe_root = './caffe-segnet-cudnn5/'
 import sys
-sys.path.insert(0, caffe_root + 'python')
+sys.path.insert(0, DeepPlanetConfig.caffe_root + 'python')
 
 import caffe
 from caffe.proto import caffe_pb2

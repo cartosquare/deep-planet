@@ -6,7 +6,7 @@ block_cipher = pyi_crypto.PyiBlockCipher(key='snoopyxu19910319')
 
 cwd = os.getcwd()
 a = Analysis(['../src/segment.py'],
-             pathex=[cwd, os.path.join(cwd, 'caffe-segnet-cudnn5/python')],
+             pathex=[cwd, os.path.join(cwd, 'caffe-segnet/python')],
              binaries=[],
              datas=collect_data_files("skimage.io._plugins"),
              hiddenimports=collect_submodules('skimage.io._plugins') + ['google.protobuf.internal'],

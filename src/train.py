@@ -6,13 +6,13 @@ import datetime
 
 # for pyinstaller dependency ...
 from skimage import io
-caffe_root = './caffe-segnet-cudnn5/'
+import subprocess
+
+from config import DeepPlanetConfig
 import sys
-sys.path.insert(0, caffe_root + 'python')
+sys.path.insert(0, DeepPlanetConfig.caffe_root + 'python')
 import caffe
 
-import subprocess
-from config import DeepPlanetConfig
 
 def log(file_handle, message):
     current_time = datetime.datetime.now()
