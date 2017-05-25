@@ -992,6 +992,27 @@ def deploy_stack():
                 gdal_merge.main(command.split())
 
 
+def deploy_predict_append():
+    log(flog, 'deploy predict dataset %s to %s ...' % (str(config.deploy), config.deploy_dir))
+
+    if not os.path.exists(config.deploy_dir):
+        #shutil.rmtree(config.deploy_dir)
+        os.mkdir(config.deploy_dir) 
+
+    predict_dir = config.deploy_dir
+    predict_txt = '%s/predict.txt' % predict_dir
+    fpredict = open(predict_txt, 'w')
+
+    for ele in config.deploy:
+        print 'process data set ', ele
+        # test file
+        test_file = '%s/%s/test.txt' % (config.project_dir, ele)
+        with open(test_file, 'r') as f:
+            for line in f:
+                fpredict.write(line)
+    fpredict.close()
+
+
 def deploy():
     log(flog, 'deploy dataset %s to %s ...' % (str(config.deploy), config.deploy_dir))
 
@@ -1355,7 +1376,14 @@ if __name__=='__main__':
 
         write_predict_txt(config.analyze_tiles_overlap_dir, config.test_txt, config.image_type)
 
-        shutil.copy(config.test_txt, '%s/predict.txt' % config.deploy_dir)
+        # consider more ... about ... merge two or more datasets?
+        if (len(config.deploy) > 1):
+            if config.deploy_mode == 'append':
+                deploy_predict_append()
+            else:
+                deploy_stack()
+        else:
+            shutil.copy(config.test_txt, '%s/predict.txt' % config.deploy_dir)
         log(flog, 'finished!')
         sys.exit()
 
