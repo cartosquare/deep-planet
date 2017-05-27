@@ -261,7 +261,12 @@ def tiler_tif(src, out):
     if config.mode == "train":
         # extent tmaxx for overlap, otherwise, the tiles will not cover whole extent
         overlap_perent = float(config.overlap) / float(config.image_dim)
-        tmaxx = int(math.ceil(tmaxx / (1 - overlap_perent)))
+        original_count_x = tmaxx - tminx + 1
+        new_count_x = int(math.ceil(original_count_x / (1 - overlap_perent)))
+        print('x from %d - %d' % (tminx, tmaxx))
+        tmaxx = tminx + new_count_x - 1
+        print('to %d - %d' % (tminx, tmaxx))
+        
 
     total_tiles = (tmaxx - tminx + 1) * (tmaxy - tminy + 1)
     # progress bar
