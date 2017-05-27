@@ -259,14 +259,23 @@ def tiler_tif(src, out):
     tmaxx, tmaxy = mercator.MetersToTile(raster_extent[2], raster_extent[3], tz)
 
     if config.mode == "train":
-        # extent tmaxx for overlap, otherwise, the tiles will not cover whole extent
+        # extent tile index extent for overlap, otherwise, the tiles will not cover whole extent
         overlap_perent = float(config.overlap) / float(config.image_dim)
+
         original_count_x = tmaxx - tminx + 1
+        original_count_y = tmaxy - tminy + 1
+
         new_count_x = int(math.ceil(original_count_x / (1 - overlap_perent)))
+        new_count_y = int(math.ceil(original_count_y / (1 - overlap_perent)))
+
         print('x from %d - %d' % (tminx, tmaxx))
         tmaxx = tminx + new_count_x - 1
         print('to %d - %d' % (tminx, tmaxx))
         
+        print('y from %d - %d' % (tminy, tmaxy))
+        tmaxy = tminy + new_count_y - 1
+        print('to %d - %d' % (tminy, tmaxy))
+
 
     total_tiles = (tmaxx - tminx + 1) * (tmaxy - tminy + 1)
     # progress bar
@@ -287,10 +296,15 @@ def tiler_tif(src, out):
 
             if config.mode == "train":
                 tile_size = config.image_dim
-                # overlap only alone horizontal
-                offset = mercator.Resolution(tz) * config.overlap * (tx - tminx)
-                minx = minx - offset
-                maxx = maxx - offset
+                # overlap alone horizontal
+                offsetx = mercator.Resolution(tz) * config.overlap * (tx - tminx)
+                minx = minx - offsetx
+                maxx = maxx - offsetx
+                
+                # overlap along vertical
+                offsety = mercator.Resolution(tz) * config.overlap * (ty - tminy)
+                miny = miny + offsety
+                maxy = maxy + offsety
             else:
                 # predict mode, extent on left and top
                 minx = minx - mercator.Resolution(tz) * config.overlap
