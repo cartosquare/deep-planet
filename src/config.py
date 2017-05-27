@@ -104,7 +104,10 @@ class DeepPlanetConfig:
 		if 'overlap' in pobject:
 			self.overlap = pobject['overlap']
 		else:
-			self.overlap = 128
+			if self.mode = 'train':
+				self.overlap = 0
+			else:
+				self.overlap = 128
 
 		# class filed in shapefile
 		if 'class_field' in pobject:

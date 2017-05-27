@@ -274,13 +274,11 @@ def tiler_tif(src, out):
             tilepath = os.path.join(out, "%d_%d_%d.tif" % (tz, tx, invert_ty))
 
             (minx, miny, maxx, maxy) = mercator.TileBounds(tx, ty, tz)
-            if config.mode == 'train':
-                tile_size = config.image_dim
-            else:
-                # predict mode, extent on left and top
-                minx = minx - mercator.Resolution(tz) * config.overlap
-                maxy = maxy + mercator.Resolution(tz) * config.overlap
-                tile_size = config.image_dim + config.overlap
+
+            # predict mode, extent on left and top if needed
+            minx = minx - mercator.Resolution(tz) * config.overlap
+            maxy = maxy + mercator.Resolution(tz) * config.overlap
+            tile_size = config.image_dim + config.overlap
 
             if not os.path.exists(tilepath):
                 command = "%s -of GTiff -te %s %s %s %s -ts %d %d -r near -multi -q %s %s" % (os.path.join(bundle_dir, 'gdalwarp'), format(minx, '.10f'), format(miny, '.10f'), format(maxx, '.10f'), format(maxy, '.10f'), tile_size, tile_size, src, tilepath)
@@ -1287,10 +1285,16 @@ if __name__=='__main__':
                 if not tiler_png(config.merged_analyze_file, config.analyze_tiles_dir, str(config.tile_level)):
                     log(flog, 'tiler png fail, exit ...')
                     sys.exit()
+
+                if config.overlap > 0:
+                    # deal with overlap
+                    create_overlap_predict_tiles(config.analyze_tiles_dir, config.analyze_tiles_overlap_dir, config.overlap)
+                    config.analyze_tiles_dir = config.analyze_tiles_overlap_dir
         
             if config.rm_incomplete_tile:
                 # Delete invalid training tiles
                 rm_invalid_tiles(config.analyze_tiles_dir, config.image_type, config.mode)
+                
         # remove cloud tiles
         if os.path.exists(config.cloud_file):
             rm_cloud_tiles()
