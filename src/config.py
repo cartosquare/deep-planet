@@ -105,6 +105,8 @@ class DeepPlanetConfig:
 			self.overlap = pobject['overlap']
 		else:
 			if self.mode == 'train':
+				# overlap in train mode is a bit different to the mode of predict
+				# and we do not support overlap for png format
 				self.overlap = 0
 			else:
 				self.overlap = 128
