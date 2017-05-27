@@ -104,7 +104,7 @@ class DeepPlanetConfig:
 		if 'overlap' in pobject:
 			self.overlap = pobject['overlap']
 		else:
-			if self.mode = 'train':
+			if self.mode == 'train':
 				self.overlap = 0
 			else:
 				self.overlap = 128
