@@ -4,6 +4,12 @@ layer {
 }
 layer {
   bottom: "data"
+  top: "lcn_data"
+  name: "lcn_data"
+  type: "LCN"
+}
+layer {
+  bottom: "lcn_data"
   top: "conv1_1"
   name: "conv1_1"
   type: "Convolution"
