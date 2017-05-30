@@ -302,7 +302,7 @@ def tiler_tif(src, out):
                 maxx = maxx - offsetx
                 
                 # overlap along vertical
-                offsety = mercator.Resolution(tz) * config.overlap * (ty - tminy)
+                offsety = mercator.Resolution(tz) * config.overlap * (tminy - ty)
                 miny = miny + offsety
                 maxy = maxy + offsety
             else:
