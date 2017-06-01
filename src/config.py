@@ -5,8 +5,8 @@ import random
 
 # Global settings
 
-# './caffe-segnet-cudnn5/'
-caffe_root = './caffe-segnet/'
+caffe_root = './caffe-segnet-cudnn5/'
+#caffe_root = './caffe-segnet/'
 
 ##########################################
 #
