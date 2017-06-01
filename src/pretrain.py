@@ -19,7 +19,7 @@ import multiprocessing
 from progressbar import *
 from skimage import io
 import json
-import globalmaptiles
+import overlap_mercator_tiles
 import subprocess
 from vector_layer import VectorLayer
 from band_math import BandMath
@@ -253,31 +253,14 @@ def tiler_tif(src, out):
     log(flog, 'tilering level %s, from %s to %s ...' % (config.tile_level, src, out))
     create_directory_if_not_exist(out)
     
-    mercator = globalmaptiles.GlobalMercator()
+    mercator = overlap_mercator_tiles.OverlapMercatorTile(overlap=config.overlap)
     tz = int(config.tile_level)
-    tminx, tminy = mercator.MetersToTile(raster_extent[0], raster_extent[1], tz)
-    tmaxx, tmaxy = mercator.MetersToTile(raster_extent[2], raster_extent[3], tz)
-
-    if config.mode == "train":
-        # extent tile index extent for overlap, otherwise, the tiles will not cover whole extent
-        overlap_perent = float(config.overlap) / float(config.image_dim)
-
-        original_count_x = tmaxx - tminx + 1
-        original_count_y = tmaxy - tminy + 1
-
-        new_count_x = int(math.ceil(original_count_x / (1 - overlap_perent)))
-        new_count_y = int(math.ceil(original_count_y / (1 - overlap_perent)))
-
-        print('x from %d - %d' % (tminx, tmaxx))
-        tmaxx = tminx + new_count_x - 1
-        print('to %d - %d' % (tminx, tmaxx))
-        
-        print('y from %d - %d' % (tminy, tmaxy))
-        tmaxy = tminy + new_count_y - 1
-        print('to %d - %d' % (tminy, tmaxy))
-
-
+    tminx, tmaxy = mercator.MetersToTile(raster_extent[0], raster_extent[1], tz)
+    tmaxx, tminy = mercator.MetersToTile(raster_extent[2], raster_extent[3], tz)
     total_tiles = (tmaxx - tminx + 1) * (tmaxy - tminy + 1)
+    print('x: %d -> %d' % (tminx, tmaxx))
+    print('y: %d -> %d' % (tminy, tmaxy))
+
     # progress bar
     widgets = [Bar('>'), ' ', Percentage(), ' ', Timer(), ' ', ETA()]
     pbar = ProgressBar(widgets=widgets, maxval=total_tiles).start()
@@ -287,25 +270,11 @@ def tiler_tif(src, out):
             count = count + 1
             pbar.update(count)
 
-            ymax = 1 << tz
-            invert_ty = ymax - ty - 1
-            # ty for TMS bottom origin, invert_ty Use top origin tile scheme (like OSM or GMaps)
-            tilepath = os.path.join(out, "%d_%d_%d.tif" % (tz, tx, invert_ty))
-
+            tilepath = os.path.join(out, "%d_%d_%d.tif" % (tz, tx, ty))
             (minx, miny, maxx, maxy) = mercator.TileBounds(tx, ty, tz)
 
-            if config.mode == "train":
-                tile_size = config.image_dim
-                # overlap alone horizontal
-                offsetx = mercator.Resolution(tz) * config.overlap * (tx - tminx)
-                minx = minx - offsetx
-                maxx = maxx - offsetx
-                
-                # overlap along vertical
-                offsety = mercator.Resolution(tz) * config.overlap * (tminy - ty)
-                miny = miny + offsety
-                maxy = maxy + offsety
-            else:
+            tile_size = config.image_dim
+            if config.mode == "predict":
                 # predict mode, extent on left and top
                 minx = minx - mercator.Resolution(tz) * config.overlap
                 maxy = maxy + mercator.Resolution(tz) * config.overlap
@@ -351,6 +320,8 @@ def flatten_google_dir(out, level):
     shutil.rmtree(google_tile_dir)
 
 def tiler_png(src, out, level):
+    ## Warning: This method not supports overlap!!!
+    ## TODO: Fix this!!!
     log(flog, 'tilering png level %s, from %s to %s ...' % (str(level), src, out))
     create_directory_if_not_exist(out)
     command = "gdal2tiles.py -s epsg:3857 -a %s -e -w none -z %s %s %s" % (str(config.nodata), level, src, out)
@@ -514,10 +485,9 @@ def rm_cloud_tiles():
         log(flog, 'open cloud file fail!')
         return
     
-    mercator = globalmaptiles.GlobalMercator()
+    mercator = overlap_mercator_tiles.OverlapMercatorTile(overlap=config.overlap)
     files = os.listdir(config.analyze_tiles_dir)
     tz = int(config.tile_level)
-    ymax = 1 << tz
     for i in range(len(files)):
         if not is_tiff(files[i]):
             continue
@@ -526,9 +496,7 @@ def rm_cloud_tiles():
         z = int(items[0])
         tx = int(items[1])
         ty = int(items[2])
-        invert_ty = ymax - ty - 1
-        bounds = mercator.TileBounds(tx, invert_ty, tz)
-        #print(bounds)
+        bounds = mercator.TileBounds(tx, ty, tz)
 
         layer = clouddata.spatialQuery(bounds)
         if layer.GetFeatureCount() > 0:
@@ -711,7 +679,7 @@ def create_utfgrids():
             os.mkdir(label_dir)
         print('generating grids to %s' % label_dir)
 
-        mercator = globalmaptiles.GlobalMercator()
+        mercator = overlap_mercator_tiles.OverlapMercatorTile(overlap=config.overlap)
         # map
         m = mapnik.Map(config.image_dim, config.image_dim)
 
@@ -758,8 +726,8 @@ def create_utfgrids():
         tz = int(config.tile_level)
         print " * Processing Zoom Level %s" % tz
 
-        tminx, tminy = mercator.MetersToTile(minx, miny, tz)
-        tmaxx, tmaxy = mercator.MetersToTile(maxx, maxy, tz)
+        tminx, tmaxy = mercator.MetersToTile(minx, miny, tz)
+        tmaxx, tminy = mercator.MetersToTile(maxx, maxy, tz)
         total_tiles = (tmaxx - tminx + 1) * (tmaxy - tminy + 1)
         # progress bar
         widgets = [Bar('>'), ' ', Percentage(), ' ', Timer(), ' ', ETA()]
@@ -770,13 +738,10 @@ def create_utfgrids():
                 count = count + 1
                 pbar.update(count)
 
-                ymax = 1 << tz
-                invert_ty = ymax - ty - 1
+                tilefilename = os.path.join(label_dir, "%d_%d_%d.json" % (tz, tx, ty))
+                tile_bounds = mercator.TileBounds(tx, ty, tz)
 
-                tilefilename = os.path.join(label_dir, "%d_%d_%d.json" % (tz, tx, invert_ty))
-                tilebounds = mercator.TileBounds(tx, ty, tz)
-
-                box = mapnik.Box2d(*tilebounds)
+                box = mapnik.Box2d(*tile_bounds)
                 m.zoom_to_box(box)
                 grid = mapnik.Grid(m.width, m.height)
                 mapnik.render_layer(m, grid, layer=0, fields=[str(config.class_field)])
