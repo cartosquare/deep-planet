@@ -260,6 +260,12 @@ class DeepPlanetConfig:
 		else:
 			self.nodata = 0
 
+		# server listen port
+		if 'port' in pobject:
+			self.port = pobject['port']
+		else:
+			self.port = 8898
+			
  		###################### 和训练样本相关的变量 ###############################
 		# 训练网络
 		self.model_dir = os.path.join(self.deploy_dir, 'models')

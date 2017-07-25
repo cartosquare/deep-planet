@@ -253,7 +253,10 @@ def tiler_tif(src, out):
     log(flog, 'tilering level %s, from %s to %s ...' % (config.tile_level, src, out))
     create_directory_if_not_exist(out)
     
-    mercator = overlap_mercator_tiles.OverlapMercatorTile(overlap=config.overlap)
+    if config.mode == "predict":
+        mercator = overlap_mercator_tiles.OverlapMercatorTile(overlap=0)
+    else:
+        mercator = overlap_mercator_tiles.OverlapMercatorTile(overlap=config.overlap)
     tz = int(config.tile_level)
     tminx, tmaxy = mercator.MetersToTile(raster_extent[0], raster_extent[1], tz)
     tmaxx, tminy = mercator.MetersToTile(raster_extent[2], raster_extent[3], tz)

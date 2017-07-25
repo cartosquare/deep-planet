@@ -114,5 +114,7 @@ if __name__ == '__main__':
     mean_iou = sum(iou) / num_classes
     print('Global acc = %f, Class average acc = %f, Mean Int over Union = %f' % (global_acc, class_avg_acc, mean_iou))
 
+    np.save(os.path.join(config.deploy_dir, 'confusion.npz'), conf)
+    
     with open(config.test_statistic_file, 'w') as f:
         f.write('Global acc = %f, Class average acc = %f, Mean Int over Union = %f\n' % (global_acc, class_avg_acc, mean_iou))
